@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Build repo: `~/repos/company-of-one/butterfly-net`. All work on branch `feat/v1`, never committed directly to `main`.
+- Build repo: `~/repos/company-of-one/butterfly-net`. All work on branch `first`, never committed directly to `main`.
 - Commit messages: conventional (`feat:`, `chore:`, `test:`, `ci:`, `docs:`). **No** `Co-Authored-By` or "Generated with Claude Code" lines.
 - Node 22. npm (not pnpm).
 - Default piles, exactly, in this order: `house`, `work stuff`, `ideas`, `video games`, `model building`.
@@ -103,29 +103,38 @@ butterfly-net/
 
 **Interfaces:**
 - Consumes: nothing
-- Produces: a building, type-checking app on branch `feat/v1`; scripts `test:unit`, `test:e2e`, `db:generate`, `db:migrate:dev`, `db:migrate:remote`, `preview`
+- Produces: a building, type-checking app on branch `first`; scripts `test:unit`, `test:e2e`, `db:generate`, `db:migrate:dev`, `db:migrate:remote`, `preview`
 
 The repo already exists: `~/repos/company-of-one/butterfly-net` is a clone of the empty
 GitHub repo `GaryGealy/butterfly-net` (default branch `main`, no commits). Do not run
-`git init` or `gh repo create`. `CLAUDE.md` and `docs/superpowers/` (this plan and the
-spec) are already in the folder, uncommitted; leave them out of the empty root commit and
-let Step 9's `git add -A` commit them on `feat/v1` with the scaffold.
+`git init` or `gh repo create`. Local `main` has no commits either. All work happens on
+the local branch `first`, which already holds `CLAUDE.md` and `docs/superpowers/` (this
+plan and the spec) as its first commits.
 
-- [ ] **Step 1: Point the remote at SSH and start `main` with an empty root commit**
+- [ ] **Step 1: Point the remote at SSH, start `main` with an empty root commit, and
+  rebase `first` onto it**
 
 The clone uses an HTTPS remote, but `gh`'s HTTPS credential helper serves Gary's work
-account, so pushes to his personal repos must go over SSH.
+account, so pushes to his personal repos must go over SSH. `first` was branched before
+`main` had a commit, so its history is rooted at the docs commit. Rebasing it onto an
+empty `main` gives the two branches a shared root. The rewrite is safe only because
+`first` has never been pushed; if `git ls-remote origin first` prints anything, stop and
+ask Gary.
 
 ```bash
 cd ~/repos/company-of-one/butterfly-net
 git remote set-url origin git@github.com:GaryGealy/butterfly-net.git
 git remote -v   # expect git@github.com:GaryGealy/butterfly-net.git for fetch and push
-git commit --allow-empty -m "chore: initial commit"
+git ls-remote origin   # expect no output: the GitHub repo is still empty
+git checkout first
+root=$(git commit-tree "$(git hash-object -t tree /dev/null)" -m "chore: initial commit")
+git branch main "$root"
+git rebase --root --onto main first
 git push -u origin main
-git checkout -b feat/v1
 ```
 
-Expected: `main` exists on GitHub with one empty commit; you are on `feat/v1`.
+Expected: `main` exists on GitHub with one empty commit; you are on `first`, whose
+history is that empty commit followed by the docs commits.
 
 - [ ] **Step 2: Scaffold into a sibling folder, then move it into the repo**
 
@@ -145,7 +154,7 @@ npm install
 ```
 
 Expected: `package.json`, `src/`, `svelte.config.js` and the sv config files are in
-`butterfly-net/`; `git status` shows them as untracked on `feat/v1`.
+`butterfly-net/`; `git status` shows them as untracked on `first`.
 
 - [ ] **Step 3: Install runtime and dev dependencies**
 
@@ -4432,7 +4441,7 @@ git commit -m "chore: bind the production D1 database"
 - [ ] **Step 8: Push the branch and confirm CI is green**
 
 ```bash
-git push -u origin feat/v1
+git push -u origin first
 gh run watch
 ```
 

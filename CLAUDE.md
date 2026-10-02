@@ -16,7 +16,7 @@ The idea's record lives in idea-forge as `digital-assistant`
 
 ## Rules for this repo
 
-- Work on branch `feat/v1`; never commit directly to `main`.
+- Work on branch `first`; never commit directly to `main`.
 - Commit messages are conventional (`feat:`, `test:`, `chore:`, `ci:`, `docs:`) with **no**
   `Co-Authored-By` or "Generated with Claude Code" lines.
 - The remote must be SSH (`git@github.com:GaryGealy/butterfly-net.git`). `gh`'s HTTPS

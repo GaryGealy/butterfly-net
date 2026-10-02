@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build butterfly-net, a cloud web app of digital 3×5 cards: type one line, Claude proposes which pile it belongs on, you confirm, and the card sits on its pile until you mark it done.
+**Goal:** Build butterfly-net, a cloud web app of digital 3×5 cards: dictate or type a thought, Claude proposes which pile it belongs on, you confirm, and the card sits on its pile until you mark it done.
 
 **Architecture:** One SvelteKit app on Cloudflare Pages, backed by a D1 database (better-sqlite3 locally) through Drizzle. Domain logic lives in small server modules (`piles`, `cards`, `search`, `parse`, `auth`), each taking a `Db` and a `userId` so every query is user-scoped and unit-testable against an in-memory SQLite. Claude is called only from `POST /api/parse`; capture never depends on it succeeding.
 
@@ -19,7 +19,8 @@
 - Claude model: `claude-opus-5-5`, `effort: 'low'`, structured outputs via `output_config.format`, server-side `fallbacks: 'default'` (beta `server-side-fallback-2026-07-01`). Changing the model is a one-line edit to `PARSE_MODEL`; do not change it in this plan.
 - Parse timeout: 5000 ms, no SDK retries. The API key is server-only (Cloudflare secret / `.dev.vars`), never sent to the browser.
 - Nothing is saved until the user confirms the preview. If Claude fails, times out, refuses, or returns invalid output, the preview still appears with the raw text and no pile.
-- v1 has **no** due dates, reminders, priority, recurrence, voice, offline queue, integrations, or export.
+- Voice is the primary input, via **macOS Dictation** into the capture box; the app ships **no** voice code (no mic button, no Web Speech API, no voice commands). Capture text is often dictated — run-on, unpunctuated, with filler — and `SYSTEM_PROMPT` must say so.
+- v1 has **no** due dates, reminders, priority, recurrence, in-app voice, offline queue, integrations, or export.
 - Auth: email/password, PBKDF2-SHA256 via Web Crypto at 100,000 iterations, session cookie `session` (httpOnly, sameSite lax, secure outside dev), 30-day sessions.
 - Every read and write of piles, cards, subtasks and search is scoped by `user_id`. Another user's id behaves exactly like a nonexistent id (404 / `NotFoundError`).
 - Plan-set limits (enforced server-side): capture text ≤ 2000 chars; title ≤ 200; notes ≤ 5000; pile name ≤ 40; ≤ 50 subtasks per card, each ≤ 200; Claude-proposed subtasks capped at 20.
@@ -2003,6 +2004,10 @@ describe('buildParseRequest', () => {
 		expect(request.system).toContain('- house\n- ideas');
 		expect(request.messages).toEqual([{ role: 'user', content: 'get resin' }]);
 	});
+
+	it('tells Claude the note is often dictated', () => {
+		expect(buildParseRequest('get resin', ['house']).system).toMatch(/dictated/);
+	});
 });
 
 describe('interpretResponse', () => {
@@ -2121,10 +2126,12 @@ export const MAX_PARSED_SUBTASKS = 20;
 
 export const SYSTEM_PROMPT = `You sort quick notes onto the user's piles, the way someone sorts 3x5 index cards. Each note is something they don't want to forget, usually a someday-task.
 
+The note is often dictated rather than typed, so it may be run-on, lack punctuation, include filler ("um", "so I was thinking", "remind me to"), or contain a misheard word. Read it for what the user meant.
+
 From the user's text, produce:
-- title: the note as a short, clear to-do in the user's own words. Keep their meaning; fix only obvious typos. No trailing period.
+- title: the note as a short, clear to-do in the user's own words — the gist, not a transcript. Drop filler; fix only obvious typos and words that were clearly misheard. No trailing period.
 - pile: the exact name of the best-fitting pile from the list below. Prefer an existing pile whenever it is a reasonable fit. Only if none fits, propose a short, lowercase new pile name and set isNewPile to true.
-- notes: any extra detail in the text that doesn't belong in the title, otherwise an empty string.
+- notes: any extra useful detail that doesn't belong in the title (reasons, specifics, context), tidied but not embellished; otherwise an empty string.
 - subtasks: only steps or items the text explicitly lists, otherwise an empty array.
 
 Never invent details the user didn't write.`;
@@ -4200,6 +4207,16 @@ Live check of Claude's sorting (costs a few cents): `ANTHROPIC_API_KEY=… npx t
 
 Inside the app, press **n** to jump to the capture box.
 
+## Dictate instead of typing (macOS)
+
+Voice is the main way to catch a thought; the app just sees text.
+
+1. **System Settings → Keyboard → Dictation:** turn it on and pick the Mac's
+   connected mic as the input.
+2. Press the hotkey above, press the Dictation shortcut (🎤 key, or **fn** twice),
+   say the thought, then press **Return**. Rambling is fine — Claude trims it to a
+   short title and keeps the detail in notes.
+
 ## Release
 
 Production deploys only when a `v*` tag is pushed:
@@ -4257,22 +4274,23 @@ const piles = ['house', 'work stuff', 'ideas', 'video games', 'model building'].
 	name
 }));
 
+// Typed-style first, then dictated-style (run-on, filler, no punctuation, a misheard word).
 const samples = [
 	'fix the squeaky hinge on the back door',
-	'need to call the insurance guy about the roof',
 	'get resin and a 0.3mm drill bit for the x-wing',
-	'finish the water temple before the dlc drops',
-	'idea: app that turns index cards into a to-do list',
 	'send Q3 numbers to Dana before friday',
 	'replace furnace filter',
-	'try oil wash on the AT-AT legs',
-	'ask about the team offsite budget',
-	'look into a co-op game for game night',
 	'paint the fence: scrape, prime, two coats',
-	'what if the newsletter was audio only',
 	'order more primer',
 	'update my resume',
-	'plant tomatoes along the south fence'
+	'um so I need to call the insurance guy about the roof because I think the storm last week took some shingles off',
+	'remind me to finish the water temple before the DLC drops which is I think the end of the month',
+	'so I was thinking what if there was an app that turns index cards into a to do list kind of like this one actually',
+	'try an oil wash on the AT AT legs and maybe some pigment powder on the feet for dust',
+	'ask about the team off site budget like how much we have and whether it covers travel',
+	'look into a co-op game for game night something four people can play that is not too long',
+	'what if the newsletter was audio only you know like a little podcast',
+	'plant tomatoes along the south fence and get some cages and fertilizer for them'
 ];
 
 const client = new Anthropic();
@@ -4291,7 +4309,7 @@ console.log(`\n${fallbacks}/${samples.length} fell back (timeout is ${PARSE_TIME
 - [ ] **Step 2: Run the smoke check** (requires a real key; ask Gary to supply it in the shell)
 
 Run: `ANTHROPIC_API_KEY=… npx tsx scripts/smoke-parse.ts`
-Expected: 15 lines. Most land on the obvious pile; latency per line is printed. **Record the result in the idea's notes** (`~/repos/idea-forge/ideas/digital-assistant/idea.md`, answering the open question "Is Opus at low effort fast enough for capture?"). If several lines fall back because of the 5 s timeout, stop and ask Gary whether to raise the timeout or switch `PARSE_MODEL` — do not change either unilaterally.
+Expected: 15 lines. Most land on the obvious pile; latency per line is printed. The last 8 are dictated-style: their titles should be short and filler-free, not transcripts. **Record the result in the idea's notes** (`~/repos/idea-forge/ideas/digital-assistant/idea.md`, answering the open question "Is Opus at low effort fast enough for capture?"). If several lines fall back because of the 5 s timeout, stop and ask Gary whether to raise the timeout or switch `PARSE_MODEL` — do not change either unilaterally.
 
 - [ ] **Step 3: Write `.github/workflows/ci.yml`**
 

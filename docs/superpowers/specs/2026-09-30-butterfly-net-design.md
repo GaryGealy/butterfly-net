@@ -8,7 +8,8 @@ is a category. When a card's done, it gets tossed.
 
 The problem is capture, not scheduling: thoughts are like butterflies — if you
 don't catch them, they flutter away. So the design optimizes for one motion:
-type a line, and it lands on the right pile. Claude does the sorting; I confirm.
+say or type a thought, and it lands on the right pile. Claude does the sorting;
+I confirm.
 
 It is also a learning project. The stack deliberately reuses what I know from
 DealOps (SvelteKit, Cloudflare) so the new learning concentrates on the Claude
@@ -22,15 +23,20 @@ This idea supersedes `random-thoughts` (killed 2026-09-30).
 - **Users:** Me first; multi-user from day one (email/password), so others could use it
 - **Core loop:** capture a card → Claude proposes its pile → confirm → card sits on
   its pile → mark done → archived
-- **What Claude does:** reads one line of text and fills in the card — title,
-  pile (existing or a proposed new one), and any notes or subtasks the text
-  clearly contains. Nothing else in v1.
+- **Primary input is voice:** I dictate into the capture box with macOS
+  Dictation through the Mac mini's mic; typing works the same way. Dictation
+  produces ordinary text, so the app needs no voice code (see *Voice capture*)
+- **What Claude does:** reads the captured text — a typed line or a dictated,
+  possibly rambling, thought — and fills in the card: a short title, pile
+  (existing or a proposed new one), and any notes or subtasks the text clearly
+  contains. Nothing else in v1.
 
 ## v1 Scope
 
 ### In
 
-- **Capture** from two places: the main app and a bare `/quick-add` page
+- **Capture** from two places: the main app and a bare `/quick-add` page,
+  dictated (macOS Dictation) or typed
 - **Parse & categorize** by Claude, shown as a **preview**; nothing saves until I confirm
 - **Piles** (categories), seeded with: house, work stuff, ideas, video games,
   model building. Claude may propose a new pile; it's created only if I accept it
@@ -42,14 +48,16 @@ This idea supersedes `random-thoughts` (killed 2026-09-30).
 
 ### Out (v1)
 
-Due dates, reminders and notifications, priority, recurring cards, voice input
-and output, offline capture, integrations (calendar, idea-forge), export,
-"thought of the day" resurfacing.
+Due dates, reminders and notifications, priority, recurring cards, in-app voice
+input (a mic button), voice output, voice commands (e.g. saying "save"), offline
+capture, integrations (calendar, idea-forge), export, "thought of the day"
+resurfacing.
 
 ### Later list
 
-JSON export; "thought of the day" resurfacing; voice capture (Web Speech API is
-the first candidate); optional due dates if their absence is missed.
+JSON export; "thought of the day" resurfacing; an in-app mic button (Web Speech
+API is the first candidate) if macOS Dictation proves insufficient, or for phone
+capture; optional due dates if their absence is missed.
 
 ## Tech Stack
 
@@ -71,6 +79,18 @@ A web page can't register a system-wide hotkey. Instead:
 - The app is installable as a PWA (own window, Dock icon, Spotlight-launchable)
 - A macOS **Shortcuts** shortcut bound to a key combo opens `/quick-add`
 - Inside the app, `N` focuses the capture box
+
+### Voice capture
+
+Voice is the primary input, handled entirely by macOS Dictation:
+
+- Dictation is turned on in System Settings → Keyboard, with the Mac mini's
+  connected mic as its input source. On Apple Silicon it runs on-device
+- The hotkey opens `/quick-add` with the capture box focused; I press the
+  Dictation shortcut (🎤 key or Fn twice), speak, then press Enter
+- Dictation writes plain text into the focused box, so the app sees no
+  difference between dictated and typed input and ships no voice code
+- Saying "save" to confirm is out of scope; confirming stays a keypress
 
 ## Architecture
 
@@ -103,14 +123,14 @@ Note: D1 export does not support virtual tables. Backups must drop and recreate
 
 ## Capture Flow
 
-1. I type one line and press Enter.
+1. I dictate (or type) the thought and press Enter.
 2. Browser → `POST /api/parse` with `{ text }`. The server loads my pile names.
 3. Server calls Claude with a structured-output JSON schema:
    ```
    { title: string, pile: string, isNewPile: boolean,
      notes: string | null, subtasks: string[] }
    ```
-   - `title` — tidied phrasing of what I typed
+   - `title` — a short, tidied phrasing of what I said or typed
    - `pile` — an existing pile name, or a proposed new one with `isNewPile: true`
    - `notes` / `subtasks` — only when the text clearly contains them
 4. **Preview** renders the card: title, a pile dropdown preselected to Claude's
@@ -127,7 +147,11 @@ The server validates Claude's response with Zod: if `isNewPile` is false but
   Moving to Sonnet 5.5 or Haiku 4.5 for latency or cost is a one-line config
   change; decide from measurement, not in advance.
 - **Prompt:** fixed system instructions plus my pile list (stable prefix, cache-
-  friendly); the typed text is the user message.
+  friendly); the captured text is the user message.
+- **Spoken input:** the prompt says the text is often dictated — run-on, with
+  filler words ("um", "so I was thinking"), missing punctuation, and occasional
+  mis-heard words. Claude distills it to a short title and moves any remaining
+  useful detail into notes rather than the title. It does not invent content.
 - **Structured outputs** via `output_config.format` (SDK `messages.parse`).
 - **Refusal fallback:** server-side `fallbacks: "default"` enabled; check
   `stop_reason` before reading content.
@@ -137,7 +161,9 @@ The server validates Claude's response with Zod: if `isNewPile` is false but
 
 - **Claude error, refusal, or timeout (~5 s):** the preview still appears with
   my raw text as the title and no pile selected. I pick one and save. Capture
-  never depends on Claude.
+  never depends on Claude. If the raw text is longer than the title limit (as
+  dictation often is), the title is its beginning and the full text goes in
+  notes, so nothing is cut off.
 - **Network failure on save:** the text stays in the box with a retry prompt.
   No offline queue in v1.
 - **Invalid schema output:** same as a Claude error — fall back to raw text.
@@ -162,7 +188,8 @@ TDD throughout.
 
 - **Vitest (unit):**
   - `/api/parse` with Claude mocked: valid result, proposed new pile, unknown
-    pile coerced to new, API error, timeout, refusal, schema-invalid output
+    pile coerced to new, API error, timeout, refusal, schema-invalid output,
+    and fallback for long raw text (title is its beginning, full text in notes)
   - Card, pile and subtask logic, including done/reopen and pile deletion with
     card reassignment
   - Search, including archived results
@@ -171,7 +198,8 @@ TDD throughout.
   mark done → find it via search in the archive. Plus: Claude unavailable →
   card still saved.
 - **Live smoke check (manual, not CI):** ~15 real cards from my piles through
-  the real API to judge sorting quality.
+  the real API to judge sorting quality, at least half of them dictated-style
+  (run-on, filler words, no punctuation) to judge title distillation too.
 
 ## Deployment
 
@@ -185,9 +213,11 @@ TDD throughout.
 
 - I use it instead of 3×5 cards for 30 days
 - Claude's pile choice is right often enough that I rarely change it in the preview
-- A capture from hotkey to "Caught ✓" feels faster than grabbing a card
+- A spoken capture from hotkey to "Caught ✓" feels faster than grabbing a card
 - I finish comfortable with the Claude API: prompting, structured output, failure handling
 
 ## Open Questions
 
 - Whether Opus at low effort is fast enough for capture, or a smaller model is needed (measure)
+- Whether macOS Dictation is accurate and quick enough day to day, or an in-app
+  mic button is worth building (live with it first)

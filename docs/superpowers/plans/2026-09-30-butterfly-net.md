@@ -111,11 +111,11 @@ GitHub repo `GaryGealy/butterfly-net` (default branch `main`, no commits). Do no
 the local branch `first`, which already holds `CLAUDE.md` and `docs/superpowers/` (this
 plan and the spec) as its first commits.
 
-- [ ] **Step 1: Point the remote at SSH, start `main` with an empty root commit, and
-  rebase `first` onto it**
+- [ ] **Step 1: Start `main` with an empty root commit and rebase `first` onto it**
 
-The clone uses an HTTPS remote, but `gh`'s HTTPS credential helper serves Gary's work
-account, so pushes to his personal repos must go over SSH. `first` was branched before
+The remote stays HTTPS — do not switch it to SSH. Git authenticates through `gh` as its
+active account, and Gary's work account is also logged in, so confirm the active account
+is `GaryGealy` before any push (`gh auth switch --user GaryGealy` if not). `first` was branched before
 `main` had a commit, so its history is rooted at the docs commit. Rebasing it onto an
 empty `main` gives the two branches a shared root. The rewrite is safe only because
 `first` has never been pushed; if `git ls-remote origin first` prints anything, stop and
@@ -123,8 +123,8 @@ ask Gary.
 
 ```bash
 cd ~/repos/company-of-one/butterfly-net
-git remote set-url origin git@github.com:GaryGealy/butterfly-net.git
-git remote -v   # expect git@github.com:GaryGealy/butterfly-net.git for fetch and push
+git remote -v   # expect https://github.com/GaryGealy/butterfly-net.git for fetch and push
+gh auth status   # the active account must be GaryGealy
 git ls-remote origin   # expect no output: the GitHub repo is still empty
 git checkout first
 root=$(git commit-tree "$(git hash-object -t tree /dev/null)" -m "chore: initial commit")
@@ -4441,6 +4441,7 @@ git commit -m "chore: bind the production D1 database"
 - [ ] **Step 8: Push the branch and confirm CI is green**
 
 ```bash
+gh auth status   # the active account must be GaryGealy; `gh auth switch --user GaryGealy` if not
 git push -u origin first
 gh run watch
 ```

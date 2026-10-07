@@ -19,9 +19,11 @@ The idea's record lives in idea-forge as `digital-assistant`
 - Work on branch `first`; never commit directly to `main`.
 - Commit messages are conventional (`feat:`, `test:`, `chore:`, `ci:`, `docs:`) with **no**
   `Co-Authored-By` or "Generated with Claude Code" lines.
-- The remote must be SSH (`git@github.com:GaryGealy/butterfly-net.git`). `gh`'s HTTPS
-  helper serves Gary's work account; check `gh auth status` before any `gh` command that
-  touches this repo, and `gh auth switch` to `GaryGealy` if needed.
+- The remote stays HTTPS (`https://github.com/GaryGealy/butterfly-net.git`); do not switch
+  it to SSH. Pushes authenticate through `gh` as whichever account is active, and Gary's
+  work account is also logged in. Before any `git push` or `gh` command that touches this
+  repo, run `gh auth status` and confirm the active account is `GaryGealy`; if not,
+  `gh auth switch --user GaryGealy` first.
 - Production deploys fire only on a pushed `v*` tag.
 - Creating Cloudflare resources, setting secrets, and pushing tags are outward-facing:
   confirm with Gary first.

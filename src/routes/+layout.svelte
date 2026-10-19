@@ -13,6 +13,7 @@
 		document.documentElement.dataset.hydrated = '';
 	});
 
+	// TODO(Task 13): `/piles` doesn't exist yet, so the list is cast below; drop the cast once it does.
 	const links = [
 		{ href: '/', label: 'Piles' },
 		{ href: '/search', label: 'Search' },

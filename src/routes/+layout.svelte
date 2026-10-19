@@ -1,6 +1,5 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '#lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -23,7 +22,10 @@
 
 <svelte:head>
 	<title>butterfly-net</title>
-	<link rel="icon" href={favicon} />
+	<link rel="manifest" href="/manifest.webmanifest" />
+	<link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+	<link rel="apple-touch-icon" href="/icons/icon-192.png" />
+	<meta name="theme-color" content="#0f766e" />
 </svelte:head>
 
 {#if data.user && page.url.pathname !== '/quick-add'}

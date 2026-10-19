@@ -1,0 +1,20 @@
+{
+	"version": "7",
+	"dialect": "sqlite",
+	"entries": [
+		{
+			"idx": 0,
+			"version": "6",
+			"when": 1792448802021,
+			"tag": "0000_eminent_ghost_rider",
+			"breakpoints": true
+		},
+		{
+			"idx": 1,
+			"version": "6",
+			"when": 1792448802695,
+			"tag": "0001_cards_fts",
+			"breakpoints": true
+		}
+	]
+}

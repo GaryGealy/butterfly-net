@@ -12,10 +12,19 @@ export type Db = DrizzleD1Database<typeof schema>;
 let localDb: Db | null = null;
 
 /**
- * D1 when running on Cloudflare; a local SQLite file (DATABASE_URL, default local.db) in dev.
+ * The D1 binding in production; a local SQLite file (DATABASE_URL, default local.db) in dev.
+ * Outside dev a missing binding is a deploy mistake, so it fails loudly rather than reaching
+ * for SQLite (which can't run on Workers).
  */
 export async function getDb(d1?: D1Database): Promise<Db> {
-	if (!dev && d1) return drizzleD1(d1, { schema });
+	if (!dev) {
+		if (!d1) {
+			throw new Error(
+				'No D1 binding named DB: add a [[d1_databases]] block with binding = "DB" to wrangler.toml'
+			);
+		}
+		return drizzleD1(d1, { schema });
+	}
 
 	if (!localDb) {
 		const { drizzle } = await import('drizzle-orm/better-sqlite3');

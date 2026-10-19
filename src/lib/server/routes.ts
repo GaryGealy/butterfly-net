@@ -7,9 +7,15 @@ export function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PATHS.has(pathname) || /^\/icons\/[\w.-]+$/.test(pathname);
 }
 
-/** Only same-site absolute paths survive; anything else sends you home. */
+/**
+ * Only same-site absolute paths survive; anything else sends you home. Control characters and
+ * backslashes are refused outright: browsers strip tabs/newlines and read a backslash as `/`, so
+ * `/\t/evil.com` would otherwise become `//evil.com`.
+ */
 export function safeNext(next: string | null): string {
-	if (!next || !next.startsWith('/') || next.startsWith('//') || next.startsWith('/\\')) return '/';
+	// eslint-disable-next-line no-control-regex
+	if (!next || !next.startsWith('/') || next.startsWith('//') || /[\u0000-\u001f\\]/.test(next))
+		return '/';
 	return next;
 }
 

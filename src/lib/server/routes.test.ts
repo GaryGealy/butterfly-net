@@ -21,6 +21,14 @@ describe('safeNext', () => {
 		expect(safeNext('//evil.example')).toBe('/');
 		expect(safeNext('/\\evil.example')).toBe('/');
 	});
+
+	it('rejects control characters and backslashes that browsers strip or fold into //', () => {
+		expect(safeNext('/\t/evil.com')).toBe('/');
+		expect(safeNext('/\n/evil.com')).toBe('/');
+		expect(safeNext('/\\evil.com')).toBe('/');
+		expect(safeNext('/a\\b')).toBe('/');
+		expect(safeNext('/card/1\u0000')).toBe('/');
+	});
 });
 
 describe('requireUser', () => {

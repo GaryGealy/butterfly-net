@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, signUp } from './helpers';
+import { PASSWORD, gotoReady, logOut, signUp } from './helpers';
 
 test('signing up lands on the piles page', async ({ page }) => {
 	await signUp(page);
@@ -10,10 +10,9 @@ test('a signed-out visitor is sent to log in, then back where they were going', 
 	page
 }) => {
 	const email = await signUp(page);
-	await page.getByRole('button', { name: 'Log out' }).click();
-	await expect(page).toHaveURL('/login');
+	await logOut(page);
 
-	await page.goto('/search?q=paint');
+	await gotoReady(page, '/search?q=paint');
 	await expect(page).toHaveURL(/\/login\?next=%2Fsearch%3Fq%3Dpaint/);
 	await page.getByLabel('Email').fill(email);
 	await page.getByLabel('Password').fill(PASSWORD);
@@ -23,7 +22,7 @@ test('a signed-out visitor is sent to log in, then back where they were going', 
 
 test('a wrong password shows an error', async ({ page }) => {
 	const email = await signUp(page);
-	await page.getByRole('button', { name: 'Log out' }).click();
+	await logOut(page);
 	await page.getByLabel('Email').fill(email);
 	await page.getByLabel('Password').fill('not the password');
 	await page.getByRole('button', { name: 'Log in' }).click();
@@ -32,8 +31,8 @@ test('a wrong password shows an error', async ({ page }) => {
 
 test('signing up twice with one email is refused', async ({ page }) => {
 	const email = await signUp(page);
-	await page.getByRole('button', { name: 'Log out' }).click();
-	await page.goto('/signup');
+	await logOut(page);
+	await gotoReady(page, '/signup');
 	await page.getByLabel('Email').fill(email.toUpperCase());
 	await page.getByLabel('Password').fill(PASSWORD);
 	await page.getByRole('button', { name: 'Create account' }).click();

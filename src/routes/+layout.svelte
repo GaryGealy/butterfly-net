@@ -1,11 +1,17 @@
 <script lang="ts">
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
+	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
+
+	// Lets e2e tests wait until hydration is done before touching the page.
+	onMount(() => {
+		document.documentElement.dataset.hydrated = '';
+	});
 
 	const links = [
 		{ href: '/', label: 'Piles' },

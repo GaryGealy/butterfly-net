@@ -27,3 +27,13 @@ export async function logOut(page: Page): Promise<void> {
 	await expect(page).toHaveURL('/login');
 	await waitForHydration(page);
 }
+
+export async function capture(page: Page, text: string, pile?: string): Promise<void> {
+	await page.getByLabel('Catch a thought').fill(text);
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview).toBeVisible();
+	if (pile) await preview.getByLabel('Pile').selectOption({ label: pile });
+	await preview.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
+}

@@ -13,8 +13,7 @@
 		document.documentElement.dataset.hydrated = '';
 	});
 
-	// TODO(Task 13): `/piles` doesn't exist yet, so the list is cast below; drop the cast once it does.
-	const links = [
+	const links: { href: '/' | '/search' | '/archive' | '/piles'; label: string }[] = [
 		{ href: '/', label: 'Piles' },
 		{ href: '/search', label: 'Search' },
 		{ href: '/archive', label: 'Archive' },
@@ -33,7 +32,7 @@
 			<a href={resolve('/')} class="font-semibold text-teal-800">🦋 butterfly-net</a>
 			{#each links as link (link.href)}
 				<a
-					href={resolve(link.href as '/')}
+					href={resolve(link.href)}
 					class="text-sm text-stone-600 hover:text-stone-900 aria-[current=page]:font-semibold aria-[current=page]:text-stone-900"
 					aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
 				>

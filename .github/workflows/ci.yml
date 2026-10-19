@@ -24,3 +24,20 @@ jobs:
       - run: npm run lint
       - run: npm run test:unit -- --run
       - run: npm run test:e2e
+
+  # The production build under workerd with a local D1: catches binding wiring that
+  # vite dev (better-sqlite3) can't see. No API key and no remote Cloudflare.
+  d1-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm install -g npm@11
+      - run: npm ci
+      - run: npm run build
+      - run: bash scripts/ci-d1-smoke.sh

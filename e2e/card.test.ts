@@ -59,3 +59,57 @@ test("another user's card is not found", async ({ page, browser }) => {
 	expect(response?.status()).toBe(404);
 	await otherContext.close();
 });
+
+test('saving resyncs subtask rows with what the server kept', async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Sort the Lego bricks');
+	await page.getByRole('link', { name: 'Sort the Lego bricks' }).click();
+	await expect(page).toHaveURL(/\/card\/[^/]+$/);
+
+	const add = page.getByRole('button', { name: 'Add subtask' });
+	await add.click();
+	await page.getByLabel('Subtask 1', { exact: true }).fill('First');
+	await add.click(); // left blank
+	await add.click();
+	await page.getByLabel('Subtask 3', { exact: true }).fill('Third');
+	await page.getByLabel('Subtask 3 done').check();
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('status')).toHaveText('Saved');
+
+	await expect(page.getByLabel('Subtask 3', { exact: true })).toHaveCount(0);
+	await expect(page.getByLabel('Subtask 1', { exact: true })).toHaveValue('First');
+	await expect(page.getByLabel('Subtask 2', { exact: true })).toHaveValue('Third');
+	await expect(page.getByLabel('Subtask 1 done')).not.toBeChecked();
+	await expect(page.getByLabel('Subtask 2 done')).toBeChecked();
+});
+
+test("another user's card cannot be changed through its actions", async ({ page, browser }) => {
+	await signUp(page);
+	await capture(page, 'Paint the hidden kit');
+	await page.getByRole('link', { name: 'Paint the hidden kit' }).click();
+	await expect(page).toHaveURL(/\/card\/[^/]+$/);
+	const cardUrl = page.url();
+
+	const otherContext = await browser.newContext();
+	const other = await otherContext.newPage();
+	await signUp(other);
+	const origin = new URL(cardUrl).origin;
+	const post = (action: string, form: Record<string, string>) =>
+		other.request.post(`${cardUrl}?/${action}`, { form, headers: { origin } });
+
+	for (const [action, form] of [
+		['save', { title: 'Hijacked', notes: 'x', pileId: 'nope' }],
+		['done', {}],
+		['delete', {}]
+	] as const) {
+		const res = await post(action, form);
+		expect(res.status(), action).toBe(404);
+	}
+	await otherContext.close();
+
+	await expect(page.getByLabel('Title')).toHaveValue('Paint the hidden kit');
+	await page.reload();
+	await waitForHydration(page);
+	await expect(page.getByLabel('Title')).toHaveValue('Paint the hidden kit');
+	await expect(page.getByRole('button', { name: 'Mark done' })).toBeVisible();
+});

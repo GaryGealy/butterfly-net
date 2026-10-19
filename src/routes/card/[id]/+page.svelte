@@ -4,9 +4,20 @@
 
 	let { data, form } = $props();
 
-	// svelte-ignore state_referenced_locally
+	const seed = () => data.card.subtasks.map((s) => ({ text: s.text, done: s.done }));
+
 	// Editable copy of the subtasks; the form posts them back as parallel fields.
-	let rows = $state(data.card.subtasks.map((s) => ({ text: s.text, done: s.done })));
+	// Re-seeded when a different card loads and after each successful save, so the
+	// rows match what the server kept (blank rows dropped) without clobbering
+	// unsaved edits on other actions.
+	let rows = $state(seed());
+	let seededFor: string | undefined;
+	$effect(() => {
+		if (data.card.id !== seededFor) {
+			if (seededFor !== undefined) rows = seed();
+			seededFor = data.card.id;
+		}
+	});
 	let confirmingDelete = $state(false);
 </script>
 
@@ -18,8 +29,10 @@
 	method="POST"
 	action="?/save"
 	use:enhance={() =>
-		async ({ update }) =>
-			update({ reset: false })}
+		async ({ result, update }) => {
+			await update({ reset: false });
+			if (result.type === 'success') rows = seed();
+		}}
 	class="mt-4 max-w-2xl space-y-4"
 >
 	<div>

@@ -76,13 +76,21 @@ async function requireCardId(db: Db, userId: string, cardId: string): Promise<vo
 	if (!card) throw new NotFoundError('card');
 }
 
+// D1 caps a statement at 100 bound parameters; ~5 per row, so insert in small chunks.
+const SUBTASK_INSERT_CHUNK = 15;
+
 async function insertSubtasks(db: Db, cardId: string, items: SubtaskInput[]): Promise<void> {
-	if (items.length === 0) return;
-	await db
-		.insert(subtasks)
-		.values(
-			items.map((item, i) => ({ card_id: cardId, text: item.text, done: item.done, sort_order: i }))
+	for (let start = 0; start < items.length; start += SUBTASK_INSERT_CHUNK) {
+		const chunk = items.slice(start, start + SUBTASK_INSERT_CHUNK);
+		await db.insert(subtasks).values(
+			chunk.map((item, i) => ({
+				card_id: cardId,
+				text: item.text,
+				done: item.done,
+				sort_order: start + i
+			}))
 		);
+	}
 }
 
 export async function createCard(db: Db, userId: string, input: NewCard): Promise<string> {

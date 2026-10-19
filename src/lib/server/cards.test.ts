@@ -106,8 +106,42 @@ describe('updateCard and setSubtasks', () => {
 		]);
 	});
 
-	it("changes nothing on another user's card", async () => {
+	it('keeps 50 subtasks in order across insert chunks', async () => {
+		const texts = Array.from({ length: 50 }, (_, i) => `task ${i}`);
+		const id = await createCard(db, userId, newCard({ subtasks: texts }));
+		const card = await getCard(db, userId, id);
+		expect(card?.subtasks.map((s) => s.text)).toEqual(texts);
+		const rows = await allSql<{ sort_order: number }>(
+			db,
+			sql`SELECT sort_order FROM subtasks WHERE card_id = ${id} ORDER BY sort_order`
+		);
+		expect(rows.map((r) => r.sort_order)).toEqual(texts.map((_, i) => i));
+	});
+
+	it("does not move a card into another user's pile", async () => {
 		const id = await createCard(db, userId, newCard());
+		const other = await createTestUser(db);
+		await seedDefaultPiles(db, other);
+		const [theirs] = await listPiles(db, other);
+		await expect(
+			updateCard(db, userId, id, { title: 'x', notes: null, pileId: theirs.id })
+		).rejects.toThrow(NotFoundError);
+		expect((await getCard(db, userId, id))?.pile_id).toBe(house.id);
+	});
+
+	it('reindexes subtasks in the search index on setSubtasks', async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['old'] }));
+		const q = sql`SELECT subtasks FROM cards_fts WHERE card_id = ${id}`;
+		expect(await allSql(db, q)).toEqual([{ subtasks: 'old' }]);
+		await setSubtasks(db, userId, id, [
+			{ text: 'alpha', done: false },
+			{ text: 'beta', done: true }
+		]);
+		expect(await allSql(db, q)).toEqual([{ subtasks: 'alpha\nbeta' }]);
+	});
+
+	it("changes nothing on another user's card", async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['mine'] }));
 		const other = await createTestUser(db);
 		await expect(
 			updateCard(db, other, id, { title: 'hijacked', notes: null, pileId: house.id })
@@ -121,6 +155,9 @@ describe('updateCard and setSubtasks', () => {
 			title: 'Fix the gate latch',
 			status: 'active'
 		});
+		expect((await getCard(db, userId, id))?.subtasks.map((s) => s.text)).toEqual(['mine']);
+		const fts = await allSql(db, sql`SELECT subtasks FROM cards_fts WHERE card_id = ${id}`);
+		expect(fts).toEqual([{ subtasks: 'mine' }]);
 	});
 });
 
@@ -138,6 +175,8 @@ describe('done, reopen, delete', () => {
 
 	it('deletes a card, its subtasks, and its index row', async () => {
 		const id = await createCard(db, userId, newCard({ subtasks: ['a'] }));
+		const before = await allSql(db, sql`SELECT card_id FROM cards_fts WHERE card_id = ${id}`);
+		expect(before).toHaveLength(1);
 		await deleteCard(db, userId, id);
 		expect(await getCard(db, userId, id)).toBeNull();
 		const indexed = await allSql(db, sql`SELECT card_id FROM cards_fts WHERE card_id = ${id}`);

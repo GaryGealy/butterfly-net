@@ -61,7 +61,7 @@
 			>
 				<input type="hidden" name="id" value={pile.id} />
 				<span class="text-stone-500">{pile.card_count} card{pile.card_count === 1 ? '' : 's'}</span>
-				{#if pile.card_count > 0}
+				{#if pile.card_count > 0 && data.piles.length > 1}
 					<label for={`reassign-${pile.id}`} class="sr-only">Move {pile.name}'s cards to</label>
 					<select
 						id={`reassign-${pile.id}`}
@@ -75,9 +75,13 @@
 						{/each}
 					</select>
 				{/if}
-				<button aria-label={`Delete ${pile.name}`} class="text-red-700 hover:underline"
-					>Delete</button
-				>
+				{#if data.piles.length > 1}
+					<button aria-label={`Delete ${pile.name}`} class="text-red-700 hover:underline"
+						>Delete</button
+					>
+				{:else}
+					<span class="text-stone-500">· your last pile can’t be deleted</span>
+				{/if}
 			</form>
 		</li>
 	{/each}

@@ -1,7 +1,7 @@
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import type { Db } from './db';
 import { cards, piles } from './db/schema';
-import { DuplicatePileError, NotFoundError, PileNotEmptyError } from './errors';
+import { DuplicatePileError, LastPileError, NotFoundError, PileNotEmptyError } from './errors';
 
 export const DEFAULT_PILES = [
 	'house',
@@ -123,6 +123,13 @@ export async function deletePile(
 ): Promise<void> {
 	const pile = await getPile(db, userId, pileId);
 	if (!pile) throw new NotFoundError('pile');
+
+	// Captures need somewhere to land, and the preview can't create a pile when Claude is down.
+	const [{ piles: pileCount }] = await db
+		.select({ piles: count() })
+		.from(piles)
+		.where(eq(piles.user_id, userId));
+	if (pileCount <= 1) throw new LastPileError();
 
 	// Counts archived cards too: they still reference this pile.
 	const [{ n }] = await db.select({ n: count() }).from(cards).where(eq(cards.pile_id, pileId));

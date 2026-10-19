@@ -20,3 +20,10 @@ export class DuplicatePileError extends Error {
 		this.name = 'DuplicatePileError';
 	}
 }
+
+export class LastPileError extends Error {
+	constructor() {
+		super('You need at least one pile');
+		this.name = 'LastPileError';
+	}
+}

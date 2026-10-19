@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from './db';
 import { cards } from './db/schema';
-import { DuplicatePileError, NotFoundError, PileNotEmptyError } from './errors';
+import { DuplicatePileError, LastPileError, NotFoundError, PileNotEmptyError } from './errors';
 import {
 	DEFAULT_PILES,
 	createPile,
@@ -129,5 +129,12 @@ describe('deletePile', () => {
 		const [house] = await listPiles(db, userId);
 		await addCard(house.id);
 		await expect(deletePile(db, userId, house.id, theirs.id)).rejects.toThrow(NotFoundError);
+	});
+
+	it('refuses to delete the last remaining pile', async () => {
+		const [last, ...rest] = await listPiles(db, userId);
+		for (const pile of rest) await deletePile(db, userId, pile.id);
+		await expect(deletePile(db, userId, last.id)).rejects.toThrow(LastPileError);
+		expect((await listPiles(db, userId)).map((p) => p.id)).toEqual([last.id]);
 	});
 });

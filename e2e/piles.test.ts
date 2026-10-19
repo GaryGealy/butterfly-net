@@ -56,3 +56,13 @@ test('a pile with cards asks where its cards go', async ({ page }) => {
 	await gotoReady(page, '/');
 	await expect(page.getByRole('region', { name: 'ideas' })).toContainText('Paint the snowspeeder');
 });
+
+test('the last pile cannot be deleted', async ({ page }) => {
+	await gotoReady(page, '/piles');
+	for (const name of ['work stuff', 'ideas', 'video games', 'model building']) {
+		await page.getByRole('button', { name: `Delete ${name}` }).click();
+		await expect.poll(() => pileNames(page)).not.toContain(name);
+	}
+	await expect(page.getByRole('button', { name: 'Delete house' })).toHaveCount(0);
+	await expect(page.getByText('your last pile can’t be deleted')).toBeVisible();
+});

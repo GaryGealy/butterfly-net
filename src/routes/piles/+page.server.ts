@@ -1,5 +1,10 @@
 import { fail } from '@sveltejs/kit';
-import { DuplicatePileError, NotFoundError, PileNotEmptyError } from '../../lib/server/errors';
+import {
+	DuplicatePileError,
+	LastPileError,
+	NotFoundError,
+	PileNotEmptyError
+} from '../../lib/server/errors';
 import {
 	createPile,
 	deletePile,
@@ -22,6 +27,7 @@ async function attempt(run: () => Promise<unknown>) {
 		await run();
 	} catch (e) {
 		if (e instanceof DuplicatePileError) return fail(400, { error: e.message });
+		if (e instanceof LastPileError) return fail(400, { error: e.message });
 		if (e instanceof PileNotEmptyError)
 			return fail(400, { error: 'Choose where this pile’s cards should go first' });
 		if (e instanceof NotFoundError) return fail(404, { error: 'Pile not found' });

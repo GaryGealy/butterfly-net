@@ -87,3 +87,53 @@ test('quick-add catches a thought and stays ready for the next', async ({ page }
 		'Beat the next game level'
 	);
 });
+
+test('the preview is locked while saving', async ({ page }) => {
+	let release: () => void = () => {};
+	const gate = new Promise<void>((resolve) => (release = resolve));
+	await page.route('**/api/cards', async (route) => {
+		await gate;
+		await route.continue();
+	});
+	await page.getByLabel('Catch a thought').fill('Paint the A-wing');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await preview.getByRole('button', { name: 'Save' }).click();
+	await expect(preview.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+	await expect(preview.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+	await page.keyboard.press('Escape');
+	await expect(preview).toBeVisible();
+	release();
+	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'model building' })).toContainText(
+		'Paint the A-wing'
+	);
+});
+
+test('proposed subtasks can be edited before saving', async ({ page }) => {
+	await page.route('**/api/parse', (route) =>
+		route.fulfill({
+			json: {
+				title: 'Build the shed',
+				pile: null,
+				notes: null,
+				subtasks: ['Buy wood', 'Buy nails'],
+				source: 'claude'
+			}
+		})
+	);
+	let saved: { subtasks: string[] } | undefined;
+	await page.route('**/api/cards', async (route) => {
+		saved = route.request().postDataJSON();
+		await route.continue();
+	});
+	await page.getByLabel('Catch a thought').fill('Build the shed');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await preview.getByLabel('Subtask 1', { exact: true }).fill('  Buy treated wood ');
+	await preview.getByLabel('Subtask 2', { exact: true }).fill('');
+	await preview.getByLabel('Pile').selectOption({ label: 'house' });
+	await preview.getByRole('button', { name: 'Save' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
+	expect(saved?.subtasks).toEqual(['Buy treated wood']);
+});

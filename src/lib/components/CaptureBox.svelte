@@ -94,7 +94,12 @@
 			const response = await fetch('/api/cards', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ title, notes: notes || null, subtasks, pile })
+				body: JSON.stringify({
+					title,
+					notes: notes || null,
+					subtasks: subtasks.map((t) => t.trim()).filter(Boolean),
+					pile
+				})
 			});
 			if (!response.ok) throw new Error(`save failed: ${response.status}`);
 		} catch {
@@ -120,6 +125,7 @@
 	}
 
 	function cancel() {
+		if (phase === 'saving') return;
 		phase = 'input';
 		notice = null;
 		queueMicrotask(() => textInput?.focus());
@@ -210,13 +216,19 @@
 			</div>
 			{#if subtasks.length > 0}
 				<ul class="space-y-1 text-sm">
-					{#each subtasks as subtask, i (i)}
+					{#each subtasks, i (i)}
 						<li class="flex items-center gap-2">
-							<span class="flex-1">☐ {subtask}</span>
+							<span aria-hidden="true">☐</span>
+							<input
+								bind:value={subtasks[i]}
+								maxlength="200"
+								aria-label={`Subtask ${i + 1}`}
+								class="flex-1 rounded-md border-stone-300 text-sm"
+							/>
 							<button
 								type="button"
 								class="text-stone-500 hover:text-red-700"
-								aria-label={`Remove subtask ${subtask}`}
+								aria-label={`Remove subtask ${i + 1}`}
 								onclick={() => subtasks.splice(i, 1)}>✕</button
 							>
 						</li>
@@ -234,6 +246,7 @@
 				<button
 					type="button"
 					onclick={cancel}
+					disabled={phase === 'saving'}
 					class="rounded-md px-4 py-1.5 text-stone-700 hover:bg-stone-100">Cancel</button
 				>
 			</div>

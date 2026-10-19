@@ -60,7 +60,7 @@
 									class="mt-0.5 size-4 rounded border border-stone-400 hover:bg-teal-100"
 								></button>
 							</form>
-							<a href={resolve(`/card/${card.id}` as '/')} class="text-sm hover:underline"
+							<a href={resolve('/card/[id]', { id: card.id })} class="text-sm hover:underline"
 								>{card.title}</a
 							>
 						</li>

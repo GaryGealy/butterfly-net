@@ -2,3 +2,9 @@ name = "butterfly-net"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "butterfly-net-db"
+database_id = "4752e933-eacc-42a8-b054-7987fece819a"
+migrations_dir = "drizzle"

@@ -2,7 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import type { ParseResult, PileRef } from '../../types';
 import { PARSE_JSON_SCHEMA, parsedCardSchema } from './schema';
 
-export const PARSE_MODEL = 'claude-opus-5-5';
+export const PARSE_MODEL = 'claude-haiku-5-5';
 export const PARSE_TIMEOUT_MS = 5000;
 export const MAX_CAPTURE_LENGTH = 2000;
 export const MAX_TITLE_LENGTH = 200;
@@ -15,7 +15,7 @@ export const SYSTEM_PROMPT = `You sort quick notes onto the user's piles, the wa
 The note is often dictated rather than typed, so it may be run-on, lack punctuation, include filler ("um", "so I was thinking", "remind me to"), or contain a misheard word. Read it for what the user meant.
 
 From the user's text, produce:
-- title: the note as a short, clear to-do in the user's own words — the gist, not a transcript. Drop filler; fix only obvious typos and words that were clearly misheard. No trailing period.
+- title: the note as a short, clear to-do in the user's own words — the gist, not a transcript, under about 8 words; put extra detail in notes. Drop filler; fix only obvious typos and words that were clearly misheard. No trailing period.
 - pile: the exact name of the best-fitting pile from the list below. Prefer an existing pile whenever it is a reasonable fit. Only if none fits, propose a short, lowercase new pile name and set isNewPile to true.
 - notes: any extra useful detail that doesn't belong in the title (reasons, specifics, context), tidied but not embellished; otherwise an empty string.
 - subtasks: only steps or items the text explicitly lists, otherwise an empty array.
@@ -30,8 +30,6 @@ export function buildParseRequest(text: string, pileNames: string[]) {
 	return {
 		model: PARSE_MODEL,
 		max_tokens: 2048,
-		betas: ['server-side-fallback-2026-07-01'],
-		fallbacks: 'default' as const,
 		output_config: {
 			effort: 'low' as const,
 			format: { type: 'json_schema' as const, schema: PARSE_JSON_SCHEMA }
@@ -108,7 +106,7 @@ export async function parseCapture(
 ): Promise<ParseResult> {
 	if (!client) return fallbackResult(text);
 	try {
-		const response = await client.beta.messages.create(
+		const response = await client.messages.create(
 			buildParseRequest(
 				text,
 				piles.map((p) => p.name)

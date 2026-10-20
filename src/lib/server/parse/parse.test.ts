@@ -38,18 +38,18 @@ const card = (overrides: Record<string, unknown> = {}) => ({
 
 function clientReturning(result: Promise<unknown>) {
 	const create = vi.fn().mockReturnValue(result);
-	return { client: { beta: { messages: { create } } } as unknown as Anthropic, create };
+	return { client: { messages: { create } } as unknown as Anthropic, create };
 }
 
 describe('buildParseRequest', () => {
-	it('asks the configured model for structured output with refusal fallbacks', () => {
+	it('asks the configured model for structured output', () => {
 		const request = buildParseRequest('get resin', ['house', 'ideas']);
 		expect(request.model).toBe(PARSE_MODEL);
-		expect(PARSE_MODEL).toBe('claude-opus-5-5');
+		expect(PARSE_MODEL).toBe('claude-haiku-5-5');
 		expect(request.output_config.effort).toBe('low');
 		expect(request.output_config.format.type).toBe('json_schema');
-		expect(request.fallbacks).toBe('default');
-		expect(request.betas).toEqual(['server-side-fallback-2026-07-01']);
+		expect(request).not.toHaveProperty('fallbacks');
+		expect(request).not.toHaveProperty('betas');
 		expect(request.system).toContain('- house\n- ideas');
 		expect(request.messages).toEqual([{ role: 'user', content: 'get resin' }]);
 	});

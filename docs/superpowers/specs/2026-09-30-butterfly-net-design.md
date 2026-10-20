@@ -143,9 +143,10 @@ The server validates Claude's response with Zod: if `isNewPile` is false but
 
 ### Claude call
 
-- **Model:** `claude-opus-5-5` at `effort: low` — a small classification task.
-  Moving to Sonnet 5.5 or Haiku 4.5 for latency or cost is a one-line config
-  change; decide from measurement, not in advance.
+- **Model:** `claude-haiku-5-5` at `effort: low` — a small classification task.
+  Chosen from the live smoke check (2026-10-19, 15 samples): Haiku matched Opus
+  5.5's pile choices at about half the latency (median ~1.1 s vs ~2.2 s) and
+  without Opus's tail near the 5 s timeout.
 - **Prompt:** fixed system instructions plus my pile list (stable prefix, cache-
   friendly); the captured text is the user message.
 - **Spoken input:** the prompt says the text is often dictated — run-on, with
@@ -153,8 +154,9 @@ The server validates Claude's response with Zod: if `isNewPile` is false but
   mis-heard words. Claude distills it to a short title and moves any remaining
   useful detail into notes rather than the title. It does not invent content.
 - **Structured outputs** via `output_config.format` (SDK `messages.parse`).
-- **Refusal fallback:** server-side `fallbacks: "default"` enabled; check
-  `stop_reason` before reading content.
+- **Refusal handling:** Haiku 5.5 has no server-side fallback model, so the
+  request sends no `fallbacks`; a `refusal` stop reason falls back to the raw
+  text like any other failure. Check `stop_reason` before reading content.
 - Verify exact SDK call shapes against current docs at implementation time.
 
 ### Failure handling — never lose a butterfly

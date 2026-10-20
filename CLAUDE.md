@@ -27,5 +27,5 @@ The idea's record lives in idea-forge as `digital-assistant`
 - Production deploys fire only on a pushed `v*` tag.
 - Creating Cloudflare resources, setting secrets, and pushing tags are outward-facing:
   confirm with Gary first.
-- Don't change the Claude model (`claude-opus-5-5`, low effort) or the 5 s parse timeout
+- Don't change the Claude model (`claude-haiku-5-5`, low effort) or the 5 s parse timeout
   without asking — the live smoke check in Task 15 is how that decision gets made.

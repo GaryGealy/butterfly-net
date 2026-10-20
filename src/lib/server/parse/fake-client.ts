@@ -24,5 +24,5 @@ export function fakeParseClient(): Anthropic {
 		};
 		return { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(body) }] };
 	};
-	return { beta: { messages: { create } } } as unknown as Anthropic;
+	return { messages: { create } } as unknown as Anthropic;
 }

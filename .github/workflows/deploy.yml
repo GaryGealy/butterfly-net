@@ -18,8 +18,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm install -g npm@11
-      - run: npm ci
+      # The npm bundled with Node 22.22 crashes upgrading itself; run npm 11 via npx instead.
+      - run: npx --yes npm@11 ci
       - run: npm run build
 
       - name: Apply D1 migrations

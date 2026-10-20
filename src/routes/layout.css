@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+
+html,
+body {
+	background: var(--color-stone-50);
+	color: var(--color-stone-900);
+}

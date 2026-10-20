@@ -9,6 +9,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WRANGLER="$ROOT/node_modules/.bin/wrangler"
 PORT="${SMOKE_PORT:-8799}"
+# Per-request limit in seconds, so a hung server fails the job instead of stalling it. Each
+# status=$(curl ...) || true lets a timeout surface as HTTP 000 in expect_status.
+CURL_TIMEOUT="${SMOKE_CURL_TIMEOUT:-20}"
 BASE="http://localhost:$PORT"
 BUILD="$ROOT/.svelte-kit/cloudflare"
 
@@ -25,8 +28,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Built from scratch: only the top-level runtime keys are copied (stopping at the first table
+# header), so a real [[d1_databases]] block in wrangler.toml can't collide with this one.
 {
-	grep -vE '^pages_build_output_dir' "$ROOT/wrangler.toml"
+	awk '/^[[:space:]]*\[/ { exit } /^(name|compatibility_date|compatibility_flags)[[:space:]]*=/' \
+		"$ROOT/wrangler.toml"
 	cat <<EOF
 pages_build_output_dir = "$BUILD"
 
@@ -54,7 +60,7 @@ echo "Starting wrangler pages dev on :$PORT..."
 SERVER_PID=$!
 
 for _ in $(seq 1 60); do
-	if curl -s -o /dev/null "$BASE/login"; then break; fi
+	if curl -s --max-time 2 -o /dev/null "$BASE/login"; then break; fi
 	kill -0 "$SERVER_PID" 2>/dev/null || fail "wrangler pages dev exited early"
 	sleep 1
 done
@@ -65,16 +71,16 @@ expect_status() { # label expected actual
 }
 
 # 1. Login page renders.
-status=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/login")
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' "$BASE/login") || true
 expect_status "GET /login" 200 "$status"
 
 # 2. Signup (form action) redirects home and sets a session cookie. Accept: text/html makes
 #    it a plain browser form post (otherwise Kit answers with a JSON action result).
 email="smoke-$(date +%s)-$RANDOM@example.com"
 headers="$WORK/signup.headers"
-status=$(curl -s -o /dev/null -D "$headers" -w '%{http_code}' -X POST "$BASE/signup" \
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -D "$headers" -w '%{http_code}' -X POST "$BASE/signup" \
 	-H "Origin: $BASE" -H 'Accept: text/html' \
-	--data-urlencode "email=$email" --data-urlencode "password=correct-horse-battery")
+	--data-urlencode "email=$email" --data-urlencode "password=correct-horse-battery") || true
 expect_status "POST /signup" 303 "$status"
 session=$(grep -i '^set-cookie: session=' "$headers" | head -n1 | sed -E 's/^[^=]*: session=([^;]*).*/\1/' | tr -d '\r')
 [ -n "$session" ] || fail "POST /signup: no session cookie set"
@@ -82,22 +88,22 @@ echo "ok  session cookie set"
 cookie="Cookie: session=$session"
 
 # 3. Parse with no API key falls back to a preview rather than failing.
-status=$(curl -s -o "$WORK/parse.json" -w '%{http_code}' -X POST "$BASE/api/parse" \
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/parse.json" -w '%{http_code}' -X POST "$BASE/api/parse" \
 	-H "$cookie" -H "Origin: $BASE" -H 'Content-Type: application/json' \
-	--data '{"text":"buy smoke detector batteries"}')
+	--data '{"text":"buy smoke detector batteries"}') || true
 expect_status "POST /api/parse (no key, fallback)" 200 "$status"
 grep -q '"source":"fallback"' "$WORK/parse.json" || fail "POST /api/parse: expected a fallback preview, got $(cat "$WORK/parse.json")"
 
 # 4. Save a card onto a new pile.
 title="Smoke card $RANDOM"
-status=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/api/cards" \
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/api/cards" \
 	-H "$cookie" -H "Origin: $BASE" -H 'Content-Type: application/json' \
-	--data "{\"title\":\"$title\",\"notes\":\"\",\"subtasks\":[],\"pile\":{\"kind\":\"new\",\"name\":\"smoke tests\"}}")
+	--data "{\"title\":\"$title\",\"notes\":\"\",\"subtasks\":[],\"pile\":{\"kind\":\"new\",\"name\":\"smoke tests\"}}") || true
 expect_status "POST /api/cards" 201 "$status"
 
 # 5. The board shows it.
 body="$WORK/home.html"
-status=$(curl -s -o "$body" -w '%{http_code}' -H "$cookie" "$BASE/")
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$body" -w '%{http_code}' -H "$cookie" "$BASE/") || true
 expect_status "GET /" 200 "$status"
 grep -qF "$title" "$body" || fail "GET /: card title \"$title\" not on the page"
 echo "ok  board shows \"$title\""

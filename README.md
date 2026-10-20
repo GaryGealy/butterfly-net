@@ -74,10 +74,12 @@ One-time setup. Each step creates something outside this repo, so do them delibe
    ```
 
 3. `npm run gen` to confirm the generated types still match (`git diff` should stay empty).
-4. Create the Pages project and its secret:
+4. Create the Pages project and its secret. `--force` keeps wrangler 4.151+ from handing
+   the create off to Workers (which fails here: there's no Worker entry point). It's needed
+   only on the create; once the project exists, Pages commands run against it directly.
 
    ```bash
-   npx wrangler pages project create butterfly-net --production-branch=main
+   npx wrangler pages project create butterfly-net --production-branch=main --force
    npx wrangler pages secret put ANTHROPIC_API_KEY --project-name=butterfly-net
    ```
 

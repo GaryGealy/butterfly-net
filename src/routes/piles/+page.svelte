@@ -1,26 +1,34 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data, form } = $props();
 </script>
 
-<svelte:head><title>Manage piles · butterfly-net</title></svelte:head>
+<svelte:head><title>Manage piles · Butterfly Net</title></svelte:head>
 
-<h1 class="text-xl font-semibold">Manage piles</h1>
+<h1 class="text-2xl font-extrabold">Manage piles</h1>
+<p class="mt-1 font-bold text-muted">
+	Rename, reorder, or let one go. Each pile wears its own colour.
+</p>
 
-{#if form?.error}<p role="alert" class="mt-3 text-sm text-red-700">{form.error}</p>{/if}
+{#if form?.error}<p role="alert" class="mt-3 text-sm font-bold text-red-700">{form.error}</p>{/if}
 
-<ul class="mt-4 max-w-2xl space-y-3">
+<ul class="mt-5 max-w-2xl space-y-3">
 	{#each data.piles as pile, i (pile.id)}
-		<li class="rounded-md border border-stone-200 bg-white p-3">
+		<li class="chip p-3">
 			<div class="flex flex-wrap items-center gap-2">
+				<span
+					aria-hidden="true"
+					class="size-4 shrink-0 rounded-full ring-1 ring-ink/10 {pileColor(i)}"
+				></span>
 				<form
 					method="POST"
 					action="?/rename"
 					use:enhance={() =>
 						async ({ update }) =>
 							update({ reset: false })}
-					class="flex flex-1 gap-2"
+					class="flex min-w-0 flex-1 gap-2"
 				>
 					<input type="hidden" name="id" value={pile.id} />
 					<input
@@ -29,11 +37,9 @@
 						required
 						maxlength="40"
 						aria-label={`Name for ${pile.name}`}
-						class="min-w-0 flex-1 rounded-md border-stone-300"
+						class="field min-w-0 flex-1 shadow-none"
 					/>
-					<button class="rounded-md border border-stone-300 px-3 py-1 text-sm hover:bg-stone-100"
-						>Rename</button
-					>
+					<button class="btn-soft">Rename</button>
 				</form>
 				<form method="POST" action="?/move" use:enhance class="flex gap-1">
 					<input type="hidden" name="id" value={pile.id} />
@@ -42,32 +48,52 @@
 						value="up"
 						disabled={i === 0}
 						aria-label={`Move ${pile.name} up`}
-						class="rounded px-2 py-1 hover:bg-stone-100 disabled:opacity-30">↑</button
+						class="btn-quiet px-3 disabled:opacity-30"
 					>
+						<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path
+								d="M6 14l6-6 6 6"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+					</button>
 					<button
 						name="direction"
 						value="down"
 						disabled={i === data.piles.length - 1}
 						aria-label={`Move ${pile.name} down`}
-						class="rounded px-2 py-1 hover:bg-stone-100 disabled:opacity-30">↓</button
+						class="btn-quiet px-3 disabled:opacity-30"
 					>
+						<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+							<path
+								d="M6 10l6 6 6-6"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
+						</svg>
+					</button>
 				</form>
 			</div>
 			<form
 				method="POST"
 				action="?/delete"
 				use:enhance
-				class="mt-2 flex flex-wrap items-center gap-2 text-sm"
+				class="mt-2 flex flex-wrap items-center gap-2 pl-6 text-sm font-bold"
 			>
 				<input type="hidden" name="id" value={pile.id} />
-				<span class="text-stone-500">{pile.card_count} card{pile.card_count === 1 ? '' : 's'}</span>
+				<span class="text-muted">{pile.card_count} card{pile.card_count === 1 ? '' : 's'}</span>
 				{#if pile.card_count > 0 && data.piles.length > 1}
 					<label for={`reassign-${pile.id}`} class="sr-only">Move {pile.name}'s cards to</label>
 					<select
 						id={`reassign-${pile.id}`}
 						name="reassignTo"
 						required
-						class="rounded-md border-stone-300 py-1 text-sm"
+						class="field w-auto rounded-full py-1.5 pr-9 pl-3 text-sm shadow-none"
 					>
 						<option value="">Move cards to…</option>
 						{#each data.piles.filter((p) => p.id !== pile.id) as target (target.id)}
@@ -76,11 +102,11 @@
 					</select>
 				{/if}
 				{#if data.piles.length > 1}
-					<button aria-label={`Delete ${pile.name}`} class="text-red-700 hover:underline"
+					<button aria-label={`Delete ${pile.name}`} class="btn-danger min-h-9 px-3 text-sm"
 						>Delete</button
 					>
 				{:else}
-					<span class="text-stone-500">· your last pile can’t be deleted</span>
+					<span class="text-muted">· your last pile can’t be deleted</span>
 				{/if}
 			</form>
 		</li>
@@ -95,9 +121,7 @@
 		required
 		maxlength="40"
 		placeholder="New pile…"
-		class="flex-1 rounded-md border-stone-300"
+		class="field min-w-0 flex-1 rounded-full px-5"
 	/>
-	<button class="rounded-md bg-teal-700 px-4 py-2 font-medium text-white hover:bg-teal-800"
-		>Add pile</button
-	>
+	<button class="btn-primary shrink-0">Add pile</button>
 </form>

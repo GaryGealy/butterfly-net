@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import Butterfly from '#lib/components/Butterfly.svelte';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -21,31 +22,40 @@
 </script>
 
 <svelte:head>
-	<title>butterfly-net</title>
+	<title>Butterfly Net</title>
 	<link rel="manifest" href="/manifest.webmanifest" />
 	<link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 	<link rel="apple-touch-icon" href="/icons/icon-192.png" />
-	<meta name="theme-color" content="#0f766e" />
+	<meta name="theme-color" content="#2f6b4f" />
 </svelte:head>
 
 {#if data.user && page.url.pathname !== '/quick-add'}
-	<header class="border-b border-stone-200 bg-white">
-		<nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
-			<a href={resolve('/')} class="font-semibold text-teal-800">🦋 butterfly-net</a>
-			{#each links as link (link.href)}
-				<a
-					href={resolve(link.href)}
-					class="text-sm text-stone-600 hover:text-stone-900 aria-[current=page]:font-semibold aria-[current=page]:text-stone-900"
-					aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
+	<header class="px-4 pt-5 pb-2 sm:px-8">
+		<nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2">
+			<a href={resolve('/')} class="flex items-center gap-2.5 text-xl font-extrabold text-ink">
+				<span
+					class="flex size-10 items-center justify-center rounded-full bg-leaf-tint motion-safe:animate-drift"
 				>
-			{/each}
-			<form method="POST" action="/logout" class="ml-auto">
-				<button class="text-sm text-stone-600 hover:text-stone-900">Log out</button>
-			</form>
+					<Butterfly class="size-6 text-leaf" />
+				</span>
+				Butterfly Net
+			</a>
+			<div class="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2">
+				{#each links as link (link.href)}
+					<a
+						href={resolve(link.href)}
+						class="font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
+						aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
+					>
+				{/each}
+				<form method="POST" action="/logout">
+					<button class="font-bold text-muted hover:text-ink">Log out</button>
+				</form>
+			</div>
 		</nav>
 	</header>
 {/if}
 
-<main class="mx-auto max-w-5xl px-4 py-6">
+<main class="mx-auto max-w-5xl px-4 py-6 sm:px-8">
 	{@render children()}
 </main>

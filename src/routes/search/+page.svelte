@@ -4,36 +4,37 @@
 	let { data } = $props();
 </script>
 
-<svelte:head><title>Search · butterfly-net</title></svelte:head>
+<svelte:head><title>Search · Butterfly Net</title></svelte:head>
 
-<form method="GET" class="flex max-w-2xl gap-2">
+<h1 class="text-2xl font-extrabold">Search</h1>
+<p class="mt-1 font-bold text-muted">Every card you've caught, on a pile or flown away.</p>
+
+<form method="GET" class="mt-5 flex max-w-2xl gap-2">
 	<label for="q" class="sr-only">Search your cards</label>
 	<input
 		id="q"
 		name="q"
 		type="search"
 		value={data.q}
-		placeholder="Search your cards…"
-		class="flex-1 rounded-md border-stone-300"
+		placeholder="What was that idea…"
+		class="field min-w-0 flex-1 rounded-full px-5"
 	/>
-	<button class="rounded-md bg-teal-700 px-4 py-2 font-medium text-white hover:bg-teal-800"
-		>Search</button
-	>
+	<button class="btn-primary shrink-0">Search</button>
 </form>
 
 {#if data.results}
 	{#if data.results.length === 0}
-		<p class="mt-6 text-stone-500">No cards match.</p>
+		<p class="mt-6 font-bold text-muted">No cards match.</p>
 	{:else}
 		<ul class="mt-6 max-w-2xl space-y-2">
 			{#each data.results as result (result.id)}
-				<li class="rounded-md border border-stone-200 bg-white p-3">
-					<a href={resolve('/card/[id]', { id: result.id })} class="font-medium hover:underline"
+				<li class="chip px-5 py-3">
+					<a href={resolve('/card/[id]', { id: result.id })} class="font-extrabold hover:underline"
 						>{result.title}</a
 					>
-					<div class="mt-1 flex gap-2 text-xs text-stone-500">
+					<div class="mt-1 flex flex-wrap gap-2 text-sm font-bold text-muted">
 						<span>{result.pile_name}</span>
-						{#if result.status === 'done'}<span class="rounded bg-stone-200 px-1.5 text-stone-700"
+						{#if result.status === 'done'}<span class="rounded-full bg-line px-2 text-ink-soft"
 								>Archived</span
 							>{/if}
 					</div>

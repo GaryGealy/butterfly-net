@@ -2,7 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import Butterfly from '#lib/components/Butterfly.svelte';
 	import CaptureBox from '#lib/components/CaptureBox.svelte';
+	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data } = $props();
 
@@ -30,22 +32,27 @@
 
 <CaptureBox bind:this={capture} piles={pileRefs} onSaved={invalidateAll} autofocus />
 
-<div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-	{#each data.piles as pile (pile.id)}
+<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+	{#each data.piles as pile, i (pile.id)}
 		<section
 			aria-labelledby={`pile-${pile.id}`}
-			class="rounded-lg border border-stone-200 bg-white p-4"
+			class="flex min-h-40 flex-col gap-3 rounded-patch p-4 {pileColor(i)}"
 		>
-			<div class="flex items-baseline justify-between">
-				<h2 id={`pile-${pile.id}`} class="font-semibold">{pile.name}</h2>
-				<span class="text-sm text-stone-500">{pile.cards.length}</span>
+			<div class="flex items-center justify-between gap-3 px-1.5">
+				<h2 id={`pile-${pile.id}`} class="text-lg font-extrabold">{pile.name}</h2>
+				<span class="rounded-full bg-white/70 px-2.5 py-0.5 text-sm font-extrabold text-ink-soft"
+					>{pile.cards.length}</span
+				>
 			</div>
 			{#if pile.cards.length === 0}
-				<p class="mt-2 text-sm text-stone-400">Nothing here yet.</p>
+				<p class="flex items-center gap-2 px-1.5 font-bold text-muted">
+					<Butterfly class="size-5" />
+					Nothing here yet. Nice and quiet.
+				</p>
 			{:else}
-				<ul class="mt-2 space-y-1.5">
+				<ul class="space-y-2">
 					{#each pile.cards as card (card.id)}
-						<li class="flex items-start gap-2">
+						<li class="chip flex items-center gap-1 py-1.5 pr-3.5 pl-1.5">
 							<form
 								method="POST"
 								action="?/done"
@@ -57,11 +64,16 @@
 								<input type="hidden" name="id" value={card.id} />
 								<button
 									aria-label={`Mark "${card.title}" done`}
-									class="mt-0.5 size-4 rounded border border-stone-400 hover:bg-teal-100"
-								></button>
+									class="flex size-11 items-center justify-center rounded-full text-muted hover:bg-leaf-tint hover:text-leaf"
+								>
+									<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+										<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8" />
+									</svg>
+								</button>
 							</form>
-							<a href={resolve('/card/[id]', { id: card.id })} class="text-sm hover:underline"
-								>{card.title}</a
+							<a
+								href={resolve('/card/[id]', { id: card.id })}
+								class="leading-snug font-bold hover:underline">{card.title}</a
 							>
 						</li>
 					{/each}
@@ -74,7 +86,7 @@
 {#if undo}
 	<div
 		role="status"
-		class="fixed inset-x-0 bottom-4 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full bg-stone-900 px-4 py-2 text-sm text-white shadow-lg"
+		class="fixed inset-x-0 bottom-5 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 text-sm font-bold shadow-float"
 	>
 		<span class="truncate">Done: {undo.title}</span>
 		<form
@@ -86,7 +98,9 @@
 			}}
 		>
 			<input type="hidden" name="id" value={undo.id} />
-			<button class="font-semibold text-teal-300 underline">Undo</button>
+			<button class="rounded-full bg-leaf-tint px-3.5 py-2 font-extrabold text-leaf-dark"
+				>Undo</button
+			>
 		</form>
 	</div>
 {/if}

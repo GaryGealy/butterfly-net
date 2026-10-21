@@ -29,9 +29,7 @@ test('accepting a proposed new pile creates it', async ({ page }) => {
 	await page.getByLabel('Catch a thought').fill('Plant tomatoes');
 	await page.getByRole('button', { name: 'Catch' }).click();
 	const preview = page.getByRole('form', { name: 'Card preview' });
-	await expect(preview.getByLabel('Pile').locator('option:checked')).toHaveText(
-		'✨ New pile: garden'
-	);
+	await expect(preview.getByLabel('Pile').locator('option:checked')).toHaveText('New pile: garden');
 	await preview.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('region', { name: 'garden' })).toContainText('Plant tomatoes');
 });

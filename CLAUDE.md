@@ -8,8 +8,10 @@ on, you confirm, and the card sits on its pile until you mark it done.
 - **Spec:** `docs/superpowers/specs/2026-09-30-butterfly-net-design.md`
 - **Implementation plan:** `docs/superpowers/plans/2026-09-30-butterfly-net.md` — 15
   TDD tasks. Read its *Global Constraints* and *Review Focus* before any task.
-- **Status:** nothing built yet. The repo is a clone of the empty GitHub repo; begin at
-  Task 1. The execution method (subagent-driven vs. native) has not been chosen — ask.
+- **Status:** all 15 plan tasks are done and the app is live at
+  https://butterfly-net.pages.dev (v0.2.0, the "Meadow" redesign). New work is
+  features and fixes beyond the plan; `docs/marketing.md` is the product and design
+  brief. Open follow-up: GitHub issue #2 (move from Pages to Workers).
 
 The idea's record lives in idea-forge as `digital-assistant`
 (`~/repos/idea-forge/ideas/digital-assistant/idea.md`). Plan Task 15 writes back to it.

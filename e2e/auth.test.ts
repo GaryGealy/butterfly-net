@@ -6,6 +6,18 @@ test('signing up lands on the piles page', async ({ page }) => {
 	await expect(page.getByRole('link', { name: 'Manage piles' })).toBeVisible();
 });
 
+test('the header shows which account is signed in', async ({ page }) => {
+	const email = await signUp(page);
+	await expect(page.getByRole('banner').getByText(`Signed in as ${email}`)).toBeVisible();
+
+	await logOut(page);
+	await page.getByLabel('Email').fill(email);
+	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByRole('button', { name: 'Log in' }).click();
+	await expect(page).toHaveURL('/');
+	await expect(page.getByRole('banner').getByText(`Signed in as ${email}`)).toBeVisible();
+});
+
 test('a signed-out visitor is sent to log in, then back where they were going', async ({
 	page
 }) => {

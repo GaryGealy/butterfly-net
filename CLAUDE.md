@@ -16,7 +16,8 @@ The idea's record lives in idea-forge as `digital-assistant`
 
 ## Rules for this repo
 
-- Work on branch `first`; never commit directly to `main`.
+- Start every piece of new work by creating a branch from an up-to-date `main`. No work
+  happens directly on `main`; changes reach `main` only through a merged pull request.
 - Commit messages are conventional (`feat:`, `test:`, `chore:`, `ci:`, `docs:`) with **no**
   `Co-Authored-By` or "Generated with Claude Code" lines.
 - The remote stays HTTPS (`https://github.com/GaryGealy/butterfly-net.git`); do not switch

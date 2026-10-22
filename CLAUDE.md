@@ -20,6 +20,8 @@ The idea's record lives in idea-forge as `digital-assistant`
 
 - Start every piece of new work by creating a branch from an up-to-date `main`. No work
   happens directly on `main`; changes reach `main` only through a merged pull request.
+- After a PR is merged, delete its branch locally (`git branch -d`) and on GitHub
+  (`git push origin --delete <branch>`) without asking, then `git fetch --prune`.
 - Commit messages are conventional (`feat:`, `test:`, `chore:`, `ci:`, `docs:`) with **no**
   `Co-Authored-By` or "Generated with Claude Code" lines.
 - The remote stays HTTPS (`https://github.com/GaryGealy/butterfly-net.git`); do not switch

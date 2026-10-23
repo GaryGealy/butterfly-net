@@ -10,7 +10,7 @@ declare global {
 	namespace Cloudflare {
 		interface Env {
 			DB: D1Database;
-			/** Pages secret in production; `.dev.vars` locally. Unset means no Claude. */
+			/** Worker secret in production; `.dev.vars` locally. Unset means no Claude. */
 			ANTHROPIC_API_KEY?: string;
 		}
 	}

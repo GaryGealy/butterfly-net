@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boots the production build under `wrangler pages dev` against a throwaway local D1 and
+# Boots the production build under `wrangler dev` against a throwaway local D1 and
 # checks that the core flow works: login page, signup, saving a card, seeing it on the board.
 # Local-only: never touches remote Cloudflare and needs no API key.
 #
@@ -20,7 +20,7 @@ BUILD="$ROOT/.svelte-kit/cloudflare"
 # A scratch wrangler config with a local-only D1 binding, so the real wrangler.toml never
 # carries a fake database_id.
 WORK="$(mktemp -d)"
-LOG="$WORK/pages-dev.log"
+LOG="$WORK/wrangler-dev.log"
 SERVER_PID=""
 cleanup() {
 	if [ -n "$SERVER_PID" ]; then kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true; fi
@@ -34,7 +34,11 @@ trap cleanup EXIT
 	awk '/^[[:space:]]*\[/ { exit } /^(name|compatibility_date|compatibility_flags)[[:space:]]*=/' \
 		"$ROOT/wrangler.toml"
 	cat <<EOF
-pages_build_output_dir = "$BUILD"
+main = "$BUILD/_worker.js"
+
+[assets]
+binding = "ASSETS"
+directory = "$BUILD"
 
 [[d1_databases]]
 binding = "DB"
@@ -46,7 +50,7 @@ EOF
 
 fail() {
 	echo "FAIL: $*" >&2
-	echo "--- wrangler pages dev log (tail) ---" >&2
+	echo "--- wrangler dev log (tail) ---" >&2
 	tail -n 40 "$LOG" >&2 || true
 	exit 1
 }
@@ -54,14 +58,14 @@ fail() {
 echo "Applying migrations to a local D1..."
 (cd "$WORK" && "$WRANGLER" d1 migrations apply butterfly-net-db --local --persist-to "$WORK/state") >/dev/null
 
-echo "Starting wrangler pages dev on :$PORT..."
-(cd "$WORK" && exec "$WRANGLER" pages dev "$BUILD" --port "$PORT" --persist-to "$WORK/state" \
+echo "Starting wrangler dev on :$PORT..."
+(cd "$WORK" && exec "$WRANGLER" dev --port "$PORT" --persist-to "$WORK/state" \
 	--show-interactive-dev-session=false) >"$LOG" 2>&1 &
 SERVER_PID=$!
 
 for _ in $(seq 1 60); do
 	if curl -s --max-time 2 -o /dev/null "$BASE/login"; then break; fi
-	kill -0 "$SERVER_PID" 2>/dev/null || fail "wrangler pages dev exited early"
+	kill -0 "$SERVER_PID" 2>/dev/null || fail "wrangler dev exited early"
 	sleep 1
 done
 

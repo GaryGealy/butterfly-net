@@ -74,16 +74,16 @@ One-time setup. Each step creates something outside this repo, so do them delibe
    ```
 
 3. `npm run gen` to confirm the generated types still match (`git diff` should stay empty).
-4. Create the Pages project and its secret. `--force` keeps wrangler 4.151+ from handing
-   the create off to Workers (which fails here: there's no Worker entry point). It's needed
-   only on the create; once the project exists, Pages commands run against it directly.
+4. Create the Worker and its secret. The first `wrangler deploy` creates the `butterfly-net`
+   Worker at `butterfly-net.<account-subdomain>.workers.dev`; the secret then takes effect
+   immediately and survives later deploys.
 
    ```bash
-   npx wrangler pages project create butterfly-net --production-branch=main --force
-   npx wrangler pages secret put ANTHROPIC_API_KEY --project-name=butterfly-net
+   npm run build && npx wrangler deploy
+   npx wrangler secret put ANTHROPIC_API_KEY
    ```
 
-5. Give GitHub Actions a Cloudflare API token (with Pages and D1 edit rights) and the
+5. Give GitHub Actions a Cloudflare API token (with Workers Scripts and D1 edit rights) and the
    account id. Check `gh auth status` first: the active account must be `GaryGealy`
    (`gh auth switch --user GaryGealy` if not).
 

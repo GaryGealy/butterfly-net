@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "wrangler types --include-env=false --check && vite build",
-		"preview": "wrangler pages dev .svelte-kit/cloudflare",
+		"preview": "wrangler dev",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "wrangler types --include-env=false --check && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",

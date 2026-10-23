@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      deployments: write
     steps:
       - uses: actions/checkout@v7
 
@@ -29,10 +28,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: d1 migrations apply butterfly-net-db --remote
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy the Worker
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy .svelte-kit/cloudflare --project-name=butterfly-net --branch=main
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          command: deploy

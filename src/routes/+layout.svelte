@@ -48,9 +48,16 @@
 						aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
 					>
 				{/each}
-				<form method="POST" action="/logout">
-					<button class="font-bold text-muted hover:text-ink">Log out</button>
-				</form>
+				<div class="flex min-w-0 items-center gap-3">
+					<span
+						title={data.user.email}
+						class="max-w-64 truncate rounded-full bg-white px-3 py-1 text-sm font-semibold text-muted shadow-chip"
+						><span class="sr-only">Signed in as</span> {data.user.email}</span
+					>
+					<form method="POST" action="/logout">
+						<button class="font-bold text-muted hover:text-ink">Log out</button>
+					</form>
+				</div>
 			</div>
 		</nav>
 	</header>

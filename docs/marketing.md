@@ -1,7 +1,7 @@
 # Butterfly Net — Marketing
 
 What Butterfly Net does, who it's for, and how to talk about it. The facts here
-match v0.1.0, live at <https://butterfly-net.pages.dev>. Anything in
+match v0.3.0, live at <https://butterfly-net.gary-m-gealy.workers.dev>. Anything in
 `[brackets]` is a placeholder to fill in before it goes out.
 
 ## What it does
@@ -96,7 +96,7 @@ phone.
 lose*
 
 **[CITY], [DATE]** — Butterfly Net, a web app that replaces the pile of
-index cards on your desk, is now available at butterfly-net.pages.dev. Users
+index cards on your desk, is now available at butterfly-net.gary-m-gealy.workers.dev. Users
 say or type a thought, and Anthropic's Claude turns it into a tidy card and
 files it on the right pile, ready for one-keypress confirmation.
 
@@ -122,7 +122,7 @@ deliberately leaves out due dates, reminders and priorities to keep capture
 fast.
 
 **Availability.** Butterfly Net is available now at
-<https://butterfly-net.pages.dev>. Sign-up takes an email and a password. It
+<https://butterfly-net.gary-m-gealy.workers.dev>. Sign-up takes an email and a password. It
 runs in any modern browser and can be installed as an app on desktop and mobile.
 [Pricing: e.g., free during early access.]
 

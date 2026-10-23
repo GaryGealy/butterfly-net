@@ -9,9 +9,10 @@ on, you confirm, and the card sits on its pile until you mark it done.
 - **Implementation plan:** `docs/superpowers/plans/2026-09-30-butterfly-net.md` — 15
   TDD tasks. Read its *Global Constraints* and *Review Focus* before any task.
 - **Status:** all 15 plan tasks are done and the app is live at
-  https://butterfly-net.pages.dev (v0.2.0, the "Meadow" redesign). New work is
-  features and fixes beyond the plan; `docs/marketing.md` is the product and design
-  brief. Open follow-up: GitHub issue #2 (move from Pages to Workers).
+  https://butterfly-net.gary-m-gealy.workers.dev (v0.3.0: the "Meadow" design, served
+  as a Cloudflare Worker with static assets; the old Pages project is deleted). New
+  work is features and fixes beyond the plan; `docs/marketing.md` is the product and
+  design brief.
 
 The idea's record lives in idea-forge as `digital-assistant`
 (`~/repos/idea-forge/ideas/digital-assistant/idea.md`). Plan Task 15 writes back to it.

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { MAX_PILE_NAME_LENGTH } from '#lib/limits.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data, form } = $props();
@@ -35,7 +36,7 @@
 						name="name"
 						value={pile.name}
 						required
-						maxlength="40"
+						maxlength={MAX_PILE_NAME_LENGTH}
 						aria-label={`Name for ${pile.name}`}
 						class="field min-w-0 flex-1 shadow-none"
 					/>
@@ -119,7 +120,7 @@
 		id="new-pile"
 		name="name"
 		required
-		maxlength="40"
+		maxlength={MAX_PILE_NAME_LENGTH}
 		placeholder="New pile…"
 		class="field min-w-0 flex-1 rounded-full px-5"
 	/>

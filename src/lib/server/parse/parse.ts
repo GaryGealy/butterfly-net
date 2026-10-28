@@ -1,13 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ParseResult, PileRef } from '../../types';
+import { MAX_NOTES_LENGTH, MAX_PILE_NAME_LENGTH, MAX_TITLE_LENGTH } from '../../limits';
 import { PARSE_JSON_SCHEMA, parsedCardSchema } from './schema';
 
 export const PARSE_MODEL = 'claude-haiku-5-5';
 export const PARSE_TIMEOUT_MS = 5000;
-export const MAX_CAPTURE_LENGTH = 2000;
-export const MAX_TITLE_LENGTH = 200;
-export const MAX_NOTES_LENGTH = 5000;
-export const MAX_PILE_NAME_LENGTH = 40;
 export const MAX_PARSED_SUBTASKS = 20;
 
 export const SYSTEM_PROMPT = `You sort quick notes onto the user's piles, the way someone sorts 3x5 index cards. Each note is something they don't want to forget, usually a someday-task.

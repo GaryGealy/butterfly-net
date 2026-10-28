@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '#lib/limits.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data, form } = $props();
@@ -47,7 +48,7 @@
 				name="title"
 				value={data.card.title}
 				required
-				maxlength="200"
+				maxlength={MAX_TITLE_LENGTH}
 				class="field mt-1 text-lg font-extrabold"
 			/>
 		</div>
@@ -68,7 +69,7 @@
 				id="card-notes"
 				name="notes"
 				rows="4"
-				maxlength="5000"
+				maxlength={MAX_NOTES_LENGTH}
 				value={data.card.notes ?? ''}
 				class="field mt-1"></textarea>
 		</div>
@@ -89,7 +90,7 @@
 						<input
 							name="subtask_text"
 							bind:value={row.text}
-							maxlength="200"
+							maxlength={MAX_TITLE_LENGTH}
 							aria-label={`Subtask ${i + 1}`}
 							class="field flex-1 py-1.5 text-sm"
 						/>

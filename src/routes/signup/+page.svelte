@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Butterfly from '#lib/components/Butterfly.svelte';
+	import { MAX_EMAIL_LENGTH } from '#lib/limits.ts';
 
 	let { form } = $props();
 </script>
@@ -21,6 +22,7 @@
 				id="email"
 				name="email"
 				type="email"
+				maxlength={MAX_EMAIL_LENGTH}
 				autocomplete="email"
 				required
 				value={form?.email}

@@ -135,3 +135,15 @@ test('proposed subtasks can be edited before saving', async ({ page }) => {
 	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
 	expect(saved?.subtasks).toEqual(['Buy treated wood']);
 });
+
+test('the capture box and notes stop at 1000 characters', async ({ page }) => {
+	const box = page.getByLabel('Catch a thought');
+	await box.fill('x'.repeat(1200));
+	await expect(box).toHaveValue('x'.repeat(1000));
+
+	await box.fill('Paint the B-wing');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const notes = page.getByRole('form', { name: 'Card preview' }).getByLabel('Notes');
+	await notes.fill('y'.repeat(1200));
+	await expect(notes).toHaveValue('y'.repeat(1000));
+});

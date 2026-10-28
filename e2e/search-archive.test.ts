@@ -56,3 +56,10 @@ test('the archive lists done cards and can reopen them', async ({ page }) => {
 		'Plant tomatoes by the fence'
 	);
 });
+
+test('a search longer than 200 characters is cut to 200', async ({ page }) => {
+	await gotoReady(page, `/search?q=tomato${'x'.repeat(300)}`);
+	const input = page.getByLabel('Search your cards');
+	await expect(input).toHaveValue(`tomato${'x'.repeat(194)}`);
+	await expect(page.getByText('No cards match.')).toBeVisible();
+});

@@ -1,14 +1,24 @@
 import { z } from 'zod';
-import { MAX_NOTES_LENGTH, MAX_PILE_NAME_LENGTH, MAX_TITLE_LENGTH } from './parse/parse';
-
-export const MAX_SUBTASKS = 50;
+import {
+	MAX_EMAIL_LENGTH,
+	MAX_NOTES_LENGTH,
+	MAX_PASSWORD_LENGTH,
+	MAX_PILE_NAME_LENGTH,
+	MAX_SUBTASKS,
+	MAX_TITLE_LENGTH
+} from '../limits';
 
 export const credentialsSchema = z.object({
-	email: z.string().trim().toLowerCase().pipe(z.email('Enter a valid email address')),
+	email: z
+		.string()
+		.trim()
+		.toLowerCase()
+		.max(MAX_EMAIL_LENGTH, `Email must be ${MAX_EMAIL_LENGTH} characters or fewer`)
+		.pipe(z.email('Enter a valid email address')),
 	password: z
 		.string()
 		.min(8, 'Password must be at least 8 characters')
-		.max(200, 'Password is too long')
+		.max(MAX_PASSWORD_LENGTH, 'Password is too long')
 });
 
 export const titleSchema = z
@@ -28,7 +38,11 @@ export const subtasksSchema = z
 	.array(z.string())
 	.max(MAX_SUBTASKS, `A card can have at most ${MAX_SUBTASKS} subtasks`)
 	.transform((items) => items.map((item) => item.trim()).filter((item) => item.length > 0))
-	.pipe(z.array(z.string().max(MAX_TITLE_LENGTH, 'Subtasks must be 200 characters or fewer')));
+	.pipe(
+		z.array(
+			z.string().max(MAX_TITLE_LENGTH, `Subtasks must be ${MAX_TITLE_LENGTH} characters or fewer`)
+		)
+	);
 
 export const pileNameSchema = z
 	.string()

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { MAX_CAPTURE_LENGTH, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '../limits';
 	import type { ParseResult, PileRef } from '../types.ts';
 	import { NEW_PILE_COLOR, NO_PILE_COLOR, pileColor } from '../pile-color';
 	import Butterfly from './Butterfly.svelte';
@@ -10,8 +11,6 @@
 	}
 
 	let { piles, onSaved, autofocus = false }: Props = $props();
-
-	const MAX_TITLE = 200;
 
 	let phase = $state<'input' | 'parsing' | 'preview' | 'saving'>('input');
 	let text = $state('');
@@ -55,9 +54,9 @@
 
 	// Mirrors the server's fallback for when /api/parse itself is unreachable.
 	function localFallback(raw: string): ParseResult {
-		const long = raw.length > MAX_TITLE;
+		const long = raw.length > MAX_TITLE_LENGTH;
 		return {
-			title: long ? `${raw.slice(0, MAX_TITLE - 1).trimEnd()}…` : raw,
+			title: long ? `${raw.slice(0, MAX_TITLE_LENGTH - 1).trimEnd()}…` : raw,
 			pile: null,
 			notes: long ? raw : null,
 			subtasks: [],
@@ -188,7 +187,7 @@
 			oninput={() => (caught = false)}
 			onkeydown={submitOnEnter}
 			rows="2"
-			maxlength="2000"
+			maxlength={MAX_CAPTURE_LENGTH}
 			placeholder="What's fluttering around?"
 			disabled={phase === 'parsing'}
 			class="min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-2 text-lg font-semibold placeholder:font-medium placeholder:text-muted focus:ring-0"
@@ -230,7 +229,7 @@
 				bind:this={titleInput}
 				bind:value={title}
 				required
-				maxlength="200"
+				maxlength={MAX_TITLE_LENGTH}
 				class="w-full border-0 bg-transparent p-0 text-xl leading-snug font-extrabold focus:ring-0"
 			/>
 			<label for="preview-notes" class="sr-only">Notes</label>
@@ -238,7 +237,7 @@
 				id="preview-notes"
 				bind:value={notes}
 				rows="2"
-				maxlength="5000"
+				maxlength={MAX_NOTES_LENGTH}
 				placeholder="Notes"
 				class="w-full resize-none border-0 bg-transparent p-0 font-semibold text-ink-soft placeholder:font-medium placeholder:text-muted focus:ring-0"
 			></textarea>
@@ -250,7 +249,7 @@
 							></span>
 							<input
 								bind:value={subtasks[i]}
-								maxlength="200"
+								maxlength={MAX_TITLE_LENGTH}
 								aria-label={`Subtask ${i + 1}`}
 								class="flex-1 border-0 bg-transparent p-0 text-sm font-semibold focus:ring-0"
 							/>

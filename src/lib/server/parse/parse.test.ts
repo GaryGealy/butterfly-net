@@ -1,8 +1,8 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { MAX_TITLE_LENGTH } from '../../limits';
 import type { PileRef } from '../../types';
 import {
-	MAX_TITLE_LENGTH,
 	PARSE_MODEL,
 	PARSE_TIMEOUT_MS,
 	buildParseRequest,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MAX_EMAIL_LENGTH, MAX_NOTES_LENGTH } from '../limits';
 import { captureSaveSchema, credentialsSchema, subtasksSchema } from './validation';
 
 describe('credentialsSchema', () => {
@@ -13,6 +14,16 @@ describe('credentialsSchema', () => {
 		expect(
 			credentialsSchema.safeParse({ email: 'me@example.com', password: 'short' }).success
 		).toBe(false);
+	});
+
+	it('rejects emails longer than 254 characters', () => {
+		const email = (length: number) => `${'a'.repeat(length - '@example.com'.length)}@example.com`;
+		expect(MAX_EMAIL_LENGTH).toBe(254);
+		expect(credentialsSchema.safeParse({ email: email(254), password: '12345678' }).success).toBe(
+			true
+		);
+		const tooLong = credentialsSchema.safeParse({ email: email(255), password: '12345678' });
+		expect(tooLong.error?.issues[0].message).toBe('Email must be 254 characters or fewer');
 	});
 });
 
@@ -57,5 +68,15 @@ describe('captureSaveSchema', () => {
 		expect(
 			captureSaveSchema.safeParse({ ...base, pile: { kind: 'new', name: 'x'.repeat(41) } }).success
 		).toBe(false);
+	});
+
+	it('caps notes at 1000 characters', () => {
+		const pile = { kind: 'existing', id: 'p1' } as const;
+		expect(MAX_NOTES_LENGTH).toBe(1000);
+		expect(captureSaveSchema.safeParse({ ...base, notes: 'x'.repeat(1000), pile }).success).toBe(
+			true
+		);
+		const tooLong = captureSaveSchema.safeParse({ ...base, notes: 'x'.repeat(1001), pile });
+		expect(tooLong.error?.issues[0].message).toBe('Notes must be 1000 characters or fewer');
 	});
 });

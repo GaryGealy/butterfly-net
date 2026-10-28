@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import { MAX_SUBTASKS, MAX_TITLE_LENGTH } from '../../../lib/limits';
 import {
 	deleteCard,
 	getCard,
@@ -8,10 +9,9 @@ import {
 	updateCard
 } from '../../../lib/server/cards';
 import { NotFoundError } from '../../../lib/server/errors';
-import { MAX_TITLE_LENGTH } from '../../../lib/server/parse/parse';
 import { listPiles } from '../../../lib/server/piles';
 import { requireUser } from '../../../lib/server/routes';
-import { MAX_SUBTASKS, cardEditSchema } from '../../../lib/server/validation';
+import { cardEditSchema } from '../../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {

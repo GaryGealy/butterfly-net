@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { MAX_SEARCH_LENGTH } from '#lib/limits.ts';
 
 	let { data } = $props();
 </script>
@@ -15,6 +16,7 @@
 		id="q"
 		name="q"
 		type="search"
+		maxlength={MAX_SEARCH_LENGTH}
 		value={data.q}
 		placeholder="What was that idea…"
 		class="field min-w-0 flex-1 rounded-full px-5"

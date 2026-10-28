@@ -51,6 +51,12 @@ test('signing up twice with one email is refused', async ({ page }) => {
 	await expect(page.getByRole('alert')).toHaveText('An account with that email already exists');
 });
 
+test('the parse API refuses captures over 1000 characters', async ({ page }) => {
+	await signUp(page);
+	const response = await page.request.post('/api/parse', { data: { text: 'x'.repeat(1001) } });
+	expect(response.status()).toBe(400);
+});
+
 test('the API refuses signed-out requests', async ({ request }) => {
 	const response = await request.post('/api/parse', { data: { text: 'hello' } });
 	expect(response.status()).toBe(401);

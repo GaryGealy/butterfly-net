@@ -13,7 +13,7 @@ The note is often dictated rather than typed, so it may be run-on, lack punctuat
 
 From the user's text, produce:
 - title: the note as a short, clear to-do in the user's own words — the gist, not a transcript, under about 8 words; put extra detail in notes. Drop filler; fix only obvious typos and words that were clearly misheard. No trailing period.
-- pile: the exact name of the best-fitting pile from the list below. Prefer an existing pile whenever it is a reasonable fit. Only if none fits, propose a short, lowercase new pile name and set isNewPile to true.
+- pile: if the user says which pile to use ("on the house pile", "add to work stuff", "new pile called camping"), use that pile: the matching name from the list below, or that name as a new pile with isNewPile set to true. Leave the instruction itself out of the title and notes. Otherwise, the exact name of a pile from the list below when that pile is clearly about the note's subject. Otherwise the note belongs to an area of life none of the piles covers: set pile to a name for that area and isNewPile to true. Don't stretch a pile to hold a note it isn't about. A new pile name is one or two lowercase words naming the area, not the task: "car" for an oil change, "health" for a dentist visit, "food" for a restaurant to try. Never leave pile empty.
 - notes: any extra useful detail that doesn't belong in the title (reasons, specifics, context), tidied but not embellished; otherwise an empty string.
 - subtasks: only steps or items the text explicitly lists, otherwise an empty array.
 

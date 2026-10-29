@@ -31,16 +31,30 @@ const samples = [
 	'ask about the team off site budget like how much we have and whether it covers travel',
 	'look into a co op game for game night something four people can play that is not too long',
 	'what if the newsletter was audio only you know like a little podcast',
-	'plant tomatoes along the south fence and get some cages and fertilizer for them'
+	'plant tomatoes along the south fence and get some cages and fertilizer for them',
+	// None of the starter piles covers these, so each should propose a new pile.
+	'get the oil changed and rotate the tires on the truck',
+	'book a dentist cleaning for sometime next month',
+	'renew my passport before the Italy trip',
+	'um find a birthday present for mom something for her garden maybe',
+	'move the emergency fund into a high yield savings account',
+	'try that new ramen place downtown that Jess mentioned',
+	// Naming the pile picks it, and the instruction stays out of the title.
+	'Create a new note on the house pile, rake front yard',
+	'new pile called camping buy a new sleeping bag',
+	// "pile" as an ordinary word is not an instruction.
+	'remind me to pile the leaves by the back fence'
 ];
 
 const client = new Anthropic();
 let fallbacks = 0;
+let newPiles = 0;
 for (const text of samples) {
 	const started = performance.now();
 	const result = await parseCapture(client, text, piles);
 	const ms = Math.round(performance.now() - started);
 	if (result.source === 'fallback') fallbacks++;
+	if (result.pile?.kind === 'new') newPiles++;
 	const pile = result.pile
 		? `${result.pile.name}${result.pile.kind === 'new' ? ' (new)' : ''}`
 		: '—';
@@ -49,5 +63,5 @@ for (const text of samples) {
 	);
 }
 console.log(
-	`\n${PARSE_MODEL}: ${fallbacks}/${samples.length} fell back (timeout is ${PARSE_TIMEOUT_MS}ms).`
+	`\n${PARSE_MODEL}: ${fallbacks}/${samples.length} fell back (timeout is ${PARSE_TIMEOUT_MS}ms); ${newPiles} proposed a new pile.`
 );

@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Butterfly from '#lib/components/Butterfly.svelte';
 	import CaptureBox from '#lib/components/CaptureBox.svelte';
+	import { cardAge, type AgeStage } from '#lib/card-age.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data } = $props();
@@ -11,6 +12,13 @@
 	let capture = $state<CaptureBox>();
 	let undo = $state<{ id: string; title: string } | null>(null);
 	let undoTimer: ReturnType<typeof setTimeout> | undefined;
+
+	const PAPER: Record<AgeStage, string> = {
+		fresh: '',
+		cream: 'bg-paper-cream ring-1 ring-paper-ink/15',
+		yellow: 'bg-paper-yellow ring-1 ring-paper-ink/20',
+		deep: 'bg-paper-deep ring-1 ring-paper-ink/25'
+	};
 
 	const pileRefs = $derived(data.piles.map((p) => ({ id: p.id, name: p.name })));
 
@@ -52,7 +60,11 @@
 			{:else}
 				<ul class="space-y-2">
 					{#each pile.cards as card (card.id)}
-						<li class="chip flex items-center gap-1 py-1.5 pr-3.5 pl-1.5">
+						{@const age = cardAge(card.created_at, data.now)}
+						<li
+							class="chip flex items-center gap-1 py-1.5 pr-3.5 pl-1.5 {PAPER[age.stage]}"
+							data-age={age.stage}
+						>
 							<form
 								method="POST"
 								action="?/done"
@@ -75,6 +87,15 @@
 								href={resolve('/card/[id]', { id: card.id })}
 								class="leading-snug font-bold hover:underline">{card.title}</a
 							>
+							{#if age.label}
+								<span
+									title={`Caught ${age.phrase}`}
+									class="ml-auto shrink-0 pl-2 text-sm font-extrabold text-paper-ink"
+									><span aria-hidden="true">{age.label}</span><span class="sr-only"
+										>caught {age.phrase}</span
+									></span
+								>
+							{/if}
 						</li>
 					{/each}
 				</ul>

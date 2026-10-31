@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const user = requireUser(locals);
 	const card = await getCard(locals.db, user.id, params.id);
 	if (!card) error(404, 'Card not found');
-	return { card, piles: await listPiles(locals.db, user.id) };
+	return { card, piles: await listPiles(locals.db, user.id), now: new Date() };
 };
 
 async function orNotFound(run: () => Promise<void>): Promise<void> {

@@ -6,7 +6,8 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const user = requireUser(locals);
-	return { piles: await listActiveCardsByPile(locals.db, user.id) };
+	// `now` travels with the data so server and browser agree on each card's age.
+	return { piles: await listActiveCardsByPile(locals.db, user.id), now: new Date() };
 };
 
 async function withCardId(

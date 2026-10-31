@@ -113,3 +113,15 @@ test("another user's card cannot be changed through its actions", async ({ page,
 	await expect(page.getByLabel('Title')).toHaveValue('Paint the hidden kit');
 	await expect(page.getByRole('button', { name: 'Mark done' })).toBeVisible();
 });
+
+test('a fresh card shows no age and says it was caught today', async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Sand the hull seams');
+	const card = page.getByRole('listitem').filter({ hasText: 'Sand the hull seams' });
+	await expect(card).toHaveAttribute('data-age', 'fresh');
+	await expect(card).not.toContainText('caught');
+
+	await page.getByRole('link', { name: 'Sand the hull seams' }).click();
+	await waitForHydration(page);
+	await expect(page.getByText('Caught today')).toBeVisible();
+});

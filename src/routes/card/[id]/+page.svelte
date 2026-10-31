@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { cardAge } from '#lib/card-age.ts';
 	import { MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '#lib/limits.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
@@ -21,6 +22,8 @@
 		}
 	});
 	let confirmingDelete = $state(false);
+
+	const age = $derived(cardAge(data.card.created_at, data.now));
 
 	// The card sits on a patch of its pile's colour.
 	const color = $derived(pileColor(data.piles.findIndex((p) => p.id === data.card.pile_id)));
@@ -51,6 +54,9 @@
 				maxlength={MAX_TITLE_LENGTH}
 				class="field mt-1 text-lg font-extrabold"
 			/>
+			<p class="mt-1.5 px-1 text-sm font-bold text-muted">
+				Caught <time datetime={data.card.created_at.toISOString()}>{age.phrase}</time>
+			</p>
 		</div>
 		<div>
 			<label for="card-pile" class="block text-sm font-bold text-ink-soft">Pile</label>

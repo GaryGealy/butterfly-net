@@ -21,6 +21,12 @@
 	--color-pile-peach: #f8ddcb;
 	--color-pile-blush: #f3e0e6;
 
+	/* Cards yellow like paper as they age (src/lib/card-age.ts). */
+	--color-paper-cream: #fcf5e1;
+	--color-paper-yellow: #f8ebc6;
+	--color-paper-deep: #f1dca6;
+	--color-paper-ink: #7a520c;
+
 	--radius-patch: 1.5rem;
 	--radius-field: 1.75rem;
 	--shadow-chip: 0 1px 2px rgb(46 58 49 / 0.08);

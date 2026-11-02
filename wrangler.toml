@@ -6,6 +6,10 @@ main = ".svelte-kit/cloudflare/_worker.js"
 # Served at butterfly-net.<account-subdomain>.workers.dev.
 workers_dev = true
 
+# Accounts that can open /invites and aren't limited to the daily Claude allowance.
+[vars]
+ADMIN_EMAILS = "gary.m.gealy@gmail.com"
+
 [assets]
 binding = "ASSETS"
 directory = ".svelte-kit/cloudflare"

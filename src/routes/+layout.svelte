@@ -48,6 +48,13 @@
 						aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
 					>
 				{/each}
+				{#if data.isAdmin}
+					<a
+						href={resolve('/invites')}
+						class="font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
+						aria-current={page.url.pathname === '/invites' ? 'page' : undefined}>Invites</a
+					>
+				{/if}
 				<div class="flex min-w-0 items-center gap-3">
 					<span
 						title={data.user.email}

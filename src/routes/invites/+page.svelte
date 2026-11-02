@@ -74,7 +74,7 @@
 		<ul class="mt-2 space-y-2">
 			{#each data.used as invite (invite.id)}
 				<li class="chip flex items-center justify-between gap-2 px-4 py-2">
-					<span class="font-bold">{invite.email ?? 'Deleted account'}</span>
+					<span class="font-bold">{invite.email ?? 'Unknown account'}</span>
 					<span class="text-sm font-bold text-muted">joined {day(invite.used_at)}</span>
 				</li>
 			{/each}

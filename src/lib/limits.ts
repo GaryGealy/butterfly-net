@@ -9,3 +9,6 @@ export const MAX_PASSWORD_LENGTH = 200;
 // The longest address RFC 5321 allows.
 export const MAX_EMAIL_LENGTH = 254;
 export const MAX_SEARCH_LENGTH = 200;
+
+// Claude sorts per non-admin user per UTC day; past it, captures fall back to picking a pile.
+export const DAILY_PARSE_LIMIT = 20;

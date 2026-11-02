@@ -86,3 +86,17 @@ export async function capture(page: Page, text: string, pile?: string): Promise<
 	await preview.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
 }
+
+/** Sets how many Claude sorts the user has used today (UTC), straight in the e2e database. */
+export function seedParseUsage(email: string, count: number): void {
+	const db = openE2eDb();
+	try {
+		const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email) as { id: string };
+		db.prepare(
+			`INSERT INTO parse_usage (user_id, day, count) VALUES (?, ?, ?)
+			 ON CONFLICT (user_id, day) DO UPDATE SET count = excluded.count`
+		).run(user.id, new Date().toISOString().slice(0, 10), count);
+	} finally {
+		db.close();
+	}
+}

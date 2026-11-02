@@ -11,5 +11,5 @@ export interface ParseResult {
 	pile: ParsedPile | null;
 	notes: string | null;
 	subtasks: string[];
-	source: 'claude' | 'fallback';
+	source: 'claude' | 'fallback' | 'limit';
 }

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { resolve } from '$app/paths';
 	import Butterfly from '#lib/components/Butterfly.svelte';
 	import { MAX_EMAIL_LENGTH } from '#lib/limits.ts';
 
@@ -43,7 +42,4 @@
 		{#if form?.error}<p role="alert" class="text-sm font-bold text-red-700">{form.error}</p>{/if}
 		<button class="btn-primary w-full">Log in</button>
 	</form>
-	<p class="mt-5 text-sm font-bold text-muted">
-		New here? <a href={resolve('/signup')} class="text-leaf underline">Create an account</a>
-	</p>
 </div>

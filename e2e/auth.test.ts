@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, gotoReady, logOut, signUp } from './helpers';
+import { PASSWORD, createInviteCode, gotoReady, logOut, signUp } from './helpers';
 
 test('signing up lands on the piles page', async ({ page }) => {
 	await signUp(page);
@@ -41,14 +41,49 @@ test('a wrong password shows an error', async ({ page }) => {
 	await expect(page.getByRole('alert')).toHaveText('Wrong email or password');
 });
 
-test('signing up twice with one email is refused', async ({ page }) => {
+const INVITE_ONLY = 'Butterfly Net is invite-only right now.';
+
+test('sign-up without a usable invite shows the invite-only message', async ({ page }) => {
+	for (const url of ['/signup', '/signup?invite=not-a-real-code']) {
+		await gotoReady(page, url);
+		await expect(page.getByText(INVITE_ONLY)).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Create account' })).toHaveCount(0);
+	}
+});
+
+test('an invite link works once', async ({ page }) => {
+	const code = createInviteCode();
+	await gotoReady(page, `/signup?invite=${code}`);
+	await page.getByLabel('Email').fill(`once-${Date.now()}@test.dev`);
+	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByRole('button', { name: 'Create account' }).click();
+	await expect(page).toHaveURL('/');
+	await logOut(page);
+
+	await gotoReady(page, `/signup?invite=${code}`);
+	await expect(page.getByText(INVITE_ONLY)).toBeVisible();
+});
+
+test('a taken email is refused and the invite link still works', async ({ page }) => {
 	const email = await signUp(page);
 	await logOut(page);
-	await gotoReady(page, '/signup');
+
+	const code = createInviteCode();
+	await gotoReady(page, `/signup?invite=${code}`);
 	await page.getByLabel('Email').fill(email.toUpperCase());
 	await page.getByLabel('Password').fill(PASSWORD);
 	await page.getByRole('button', { name: 'Create account' }).click();
 	await expect(page.getByRole('alert')).toHaveText('An account with that email already exists');
+
+	await page.getByLabel('Email').fill(`second-${Date.now()}@test.dev`);
+	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByRole('button', { name: 'Create account' }).click();
+	await expect(page).toHaveURL('/');
+});
+
+test('the log-in page no longer offers sign-up', async ({ page }) => {
+	await gotoReady(page, '/login');
+	await expect(page.getByRole('link', { name: 'Create an account' })).toHaveCount(0);
 });
 
 test('the parse API refuses captures over 1000 characters', async ({ page }) => {

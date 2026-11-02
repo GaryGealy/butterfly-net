@@ -35,3 +35,6 @@ The idea's record lives in idea-forge as `digital-assistant`
   confirm with Gary first.
 - Don't change the Claude model (`claude-haiku-5-5`, low effort) or the 5 s parse timeout
   without asking — the live smoke check in Task 15 is how that decision gets made.
+- Sign-up is invite-only (`/invites`, admins from `ADMIN_EMAILS` in `wrangler.toml`), and
+  non-admins get `DAILY_PARSE_LIMIT` Claude sorts a day. A live smoke check on production needs
+  an invite link from Gary.

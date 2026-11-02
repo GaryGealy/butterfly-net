@@ -1,4 +1,11 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import {
+	index,
+	integer,
+	primaryKey,
+	sqliteTable,
+	text,
+	uniqueIndex
+} from 'drizzle-orm/sqlite-core';
 
 const id = () =>
 	text('id')
@@ -70,3 +77,28 @@ export const subtasks = sqliteTable('subtasks', {
 	done: integer('done', { mode: 'boolean' }).notNull().default(false),
 	sort_order: integer('sort_order').notNull()
 });
+
+export const invites = sqliteTable('invites', {
+	id: id(),
+	code: text('code').notNull().unique(),
+	created_by: text('created_by')
+		.notNull()
+		.references(() => users.id, { onDelete: 'cascade' }),
+	created_at: createdAt(),
+	expires_at: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+	used_at: integer('used_at', { mode: 'timestamp_ms' }),
+	used_by: text('used_by').references(() => users.id, { onDelete: 'set null' })
+});
+
+/** One row per user per UTC day: how many Claude sorts they asked for. */
+export const parseUsage = sqliteTable(
+	'parse_usage',
+	{
+		user_id: text('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		day: text('day').notNull(),
+		count: integer('count').notNull()
+	},
+	(t) => [primaryKey({ columns: [t.user_id, t.day] })]
+);

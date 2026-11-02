@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { capture, gotoReady, signUp } from './helpers';
+import { capture, gotoReady, logOut, seedParseUsage, signInAsAdmin, signUp } from './helpers';
 
 test.beforeEach(async ({ page }) => {
 	await signUp(page);
@@ -146,4 +146,38 @@ test('the capture box and notes stop at 1000 characters', async ({ page }) => {
 	const notes = page.getByRole('form', { name: 'Card preview' }).getByLabel('Notes');
 	await notes.fill('y'.repeat(1200));
 	await expect(notes).toHaveValue('y'.repeat(1000));
+});
+
+test.describe('daily allowance', () => {
+	test('past 20 sorts a day, the preview asks you to pick the pile', async ({ page }) => {
+		await logOut(page);
+		const email = await signUp(page);
+		seedParseUsage(email, 20);
+
+		await page.getByLabel('Catch a thought').fill('Paint the Y-wing');
+		await page.getByRole('button', { name: 'Catch' }).click();
+		const preview = page.getByRole('form', { name: 'Card preview' });
+		await expect(preview.getByRole('status')).toHaveText(
+			"You've used today's 20 Claude sorts. Pick a pile yourself; sorting is back tomorrow."
+		);
+		await expect(preview.getByRole('button', { name: 'Save' })).toBeDisabled();
+		await preview.getByLabel('Pile').selectOption({ label: 'model building' });
+		await preview.getByRole('button', { name: 'Save' }).click();
+		await expect(page.getByRole('region', { name: 'model building' })).toContainText(
+			'Paint the Y-wing'
+		);
+	});
+
+	test("admins aren't counted toward the allowance", async ({ page }) => {
+		await logOut(page);
+		await signInAsAdmin(page, 'admin-3@e2e.test');
+		seedParseUsage('admin-3@e2e.test', 20);
+
+		await page.getByLabel('Catch a thought').fill('Paint the A-wing canopy');
+		await page.getByRole('button', { name: 'Catch' }).click();
+		const preview = page.getByRole('form', { name: 'Card preview' });
+		await expect(preview).toBeVisible();
+		await expect(preview.getByRole('button', { name: 'Save' })).toBeEnabled();
+		await expect(preview.getByText(/used today's 20 Claude sorts/)).toHaveCount(0);
+	});
 });

@@ -12,7 +12,16 @@ describe('migrations', () => {
 			sql`SELECT name FROM sqlite_master WHERE type = 'table'`
 		);
 		const names = rows.map((r) => r.name);
-		for (const table of ['users', 'sessions', 'piles', 'cards', 'subtasks', 'cards_fts']) {
+		for (const table of [
+			'users',
+			'sessions',
+			'piles',
+			'cards',
+			'subtasks',
+			'cards_fts',
+			'invites',
+			'parse_usage'
+		]) {
 			expect(names).toContain(table);
 		}
 	});

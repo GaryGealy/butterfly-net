@@ -122,7 +122,7 @@ deliberately leaves out due dates, reminders and priorities to keep capture
 fast.
 
 **Availability.** Butterfly Net is available now at
-<https://butterfly-net.gary-m-gealy.workers.dev>. Sign-up takes an email and a password. It
+<https://butterfly-net.gary-m-gealy.workers.dev>. Sign-up is by invitation during early access. It
 runs in any modern browser and can be installed as an app on desktop and mobile.
 [Pricing: e.g., free during early access.]
 
@@ -168,3 +168,4 @@ to a searchable archive. It runs in any browser and installs like an app.
   Don't describe it as a built-in voice assistant.
 - Use real cards from the product as examples. Don't invent user counts,
   testimonials or reviews.
+- Butterfly Net is invite-only. Don't invite readers to "sign up now".

@@ -12,12 +12,15 @@ declare global {
 			DB: D1Database;
 			/** Worker secret in production; `.dev.vars` locally. Unset means no Claude. */
 			ANTHROPIC_API_KEY?: string;
+			/** Comma-separated admin emails, from wrangler.toml [vars]. */
+			ADMIN_EMAILS?: string;
 		}
 	}
 
 	namespace App {
 		interface Locals {
 			user: SessionUser | null;
+			isAdmin: boolean;
 			db: Db;
 		}
 

@@ -78,13 +78,20 @@ expect_status() { # label expected actual
 status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' "$BASE/login") || true
 expect_status "GET /login" 200 "$status"
 
+# Sign-up is invite-only, so seed an inviter and an invite in the local D1 first.
+invite="smoke-invite-$RANDOM$RANDOM"
+now_ms=$(( $(date +%s) * 1000 ))
+(cd "$WORK" && "$WRANGLER" d1 execute butterfly-net-db --local --persist-to "$WORK/state" --command \
+	"INSERT INTO users (id, email, password_hash, created_at) VALUES ('smoke-inviter', 'inviter@smoke.test', 'unused', $now_ms);
+	 INSERT INTO invites (id, code, created_by, created_at, expires_at) VALUES ('smoke-invite', '$invite', 'smoke-inviter', $now_ms, $(( now_ms + 86400000 )));") >/dev/null
+
 # 2. Signup (form action) redirects home and sets a session cookie. Accept: text/html makes
 #    it a plain browser form post (otherwise Kit answers with a JSON action result).
 email="smoke-$(date +%s)-$RANDOM@example.com"
 headers="$WORK/signup.headers"
 status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -D "$headers" -w '%{http_code}' -X POST "$BASE/signup" \
 	-H "Origin: $BASE" -H 'Accept: text/html' \
-	--data-urlencode "email=$email" --data-urlencode "password=correct-horse-battery") || true
+	--data-urlencode "email=$email" --data-urlencode "password=correct-horse-battery" --data-urlencode "invite=$invite") || true
 expect_status "POST /signup" 303 "$status"
 session=$(grep -i '^set-cookie: session=' "$headers" | head -n1 | sed -E 's/^[^=]*: session=([^;]*).*/\1/' | tr -d '\r')
 [ -n "$session" ] || fail "POST /signup: no session cookie set"

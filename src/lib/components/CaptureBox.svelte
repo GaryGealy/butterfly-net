@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { MAX_CAPTURE_LENGTH, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '../limits';
+	import {
+		DAILY_PARSE_LIMIT,
+		MAX_CAPTURE_LENGTH,
+		MAX_NOTES_LENGTH,
+		MAX_TITLE_LENGTH
+	} from '../limits';
 	import type { ParseResult, PileRef } from '../types.ts';
 	import { NEW_PILE_COLOR, NO_PILE_COLOR, pileColor } from '../pile-color';
 	import Butterfly from './Butterfly.svelte';
@@ -76,7 +81,11 @@
 					? `new:${result.pile.name}`
 					: '';
 		notice =
-			result.source === 'fallback' ? "Couldn't sort this one automatically — pick a pile." : null;
+			result.source === 'limit'
+				? `You've used today's ${DAILY_PARSE_LIMIT} Claude sorts. Pick a pile yourself; sorting is back tomorrow.`
+				: result.source === 'fallback'
+					? "Couldn't sort this one automatically — pick a pile."
+					: null;
 		phase = 'preview';
 	}
 

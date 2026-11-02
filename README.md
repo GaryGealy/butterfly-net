@@ -95,6 +95,16 @@ One-time setup. Each step creates something outside this repo, so do them delibe
 6. Commit the `wrangler.toml` change, then push a `v*` tag (below). The deploy workflow
    applies the D1 migrations and deploys.
 
+## Inviting people
+
+Sign-up is invite-only. Log in with an account listed in `ADMIN_EMAILS` (`wrangler.toml`
+`[vars]`), open **Invites** in the header, and choose **Create invite link**. Each link works
+once and expires after 14 days. Send it to the person; they create their account from it.
+
+Everyone except admins gets 20 Claude sorts a day (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
+resetting at midnight UTC). Past that, captures still work: the preview asks them to pick the
+pile. Keep a monthly spend limit on the Anthropic workspace as a backstop.
+
 ## Release
 
 Production deploys only when a `v*` tag is pushed:

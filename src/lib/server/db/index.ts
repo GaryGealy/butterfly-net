@@ -32,6 +32,8 @@ export async function getDb(d1?: D1Database): Promise<Db> {
 		const path = await import('node:path');
 		const sqlite = new Database(path.join(process.cwd(), process.env.DATABASE_URL || 'local.db'));
 		sqlite.pragma('foreign_keys = ON');
+		// e2e helpers write to the same file from another process; wait rather than fail.
+		sqlite.pragma('busy_timeout = 5000');
 		localDb = drizzle(sqlite, { schema }) as unknown as Db;
 	}
 	return localDb;

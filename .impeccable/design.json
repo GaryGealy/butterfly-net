@@ -1,0 +1,219 @@
+{
+	"schemaVersion": 2,
+	"generatedAt": "2026-11-03T15:20:00Z",
+	"title": "Design System: Butterfly Net",
+	"extensions": {
+		"colorMeta": {
+			"ground": {
+				"role": "neutral",
+				"displayName": "Garden Ground",
+				"tonalRamp": [
+					"#26251f",
+					"#45443b",
+					"#67665b",
+					"#8b8a7e",
+					"#b1b0a3",
+					"#d5d4c8",
+					"#ecebe2",
+					"#fbfaf3"
+				]
+			},
+			"ink": {
+				"role": "neutral",
+				"displayName": "Bark",
+				"tonalRamp": [
+					"#151c17",
+					"#2e3a31",
+					"#4a584d",
+					"#68776b",
+					"#8a978c",
+					"#adb8af",
+					"#d1d9d2",
+					"#eef2ee"
+				]
+			},
+			"ink-soft": { "role": "neutral", "displayName": "Soft Bark" },
+			"muted": { "role": "neutral", "displayName": "Moss Grey" },
+			"line": { "role": "neutral", "displayName": "Pale Line" },
+			"surface": { "role": "neutral", "displayName": "Petal White" },
+			"leaf": {
+				"role": "primary",
+				"displayName": "Leaf Green",
+				"tonalRamp": [
+					"#0f2a1d",
+					"#1f4d37",
+					"#2f6b4f",
+					"#4a8a6b",
+					"#6fa98a",
+					"#9cc8ac",
+					"#c9e2cf",
+					"#eef6ef"
+				]
+			},
+			"leaf-dark": { "role": "primary", "displayName": "Deep Leaf" },
+			"leaf-tint": { "role": "primary", "displayName": "New Shoot" },
+			"pile-sage": { "role": "secondary", "displayName": "Sage" },
+			"pile-sky": { "role": "secondary", "displayName": "Sky" },
+			"pile-butter": { "role": "secondary", "displayName": "Butter" },
+			"pile-lilac": { "role": "secondary", "displayName": "Lilac" },
+			"pile-peach": { "role": "secondary", "displayName": "Peach" },
+			"pile-blush": { "role": "secondary", "displayName": "Blush" },
+			"paper-cream": { "role": "tertiary", "displayName": "Cream" },
+			"paper-yellow": { "role": "tertiary", "displayName": "Yellowed" },
+			"paper-deep": { "role": "tertiary", "displayName": "Old Paper" },
+			"paper-ink": { "role": "tertiary", "displayName": "Sepia Ink" }
+		},
+		"typographyMeta": {
+			"headline": {
+				"displayName": "Headline",
+				"purpose": "Wordmark and the preview's card title."
+			},
+			"title": { "displayName": "Title", "purpose": "Pile names and page headings." },
+			"capture": {
+				"displayName": "Capture",
+				"purpose": "Text typed or dictated into the capture box."
+			},
+			"body": { "displayName": "Body", "purpose": "Card titles, nav links, buttons." },
+			"label": { "displayName": "Label", "purpose": "Hints, notices, badges, age labels." }
+		},
+		"shadows": [
+			{
+				"name": "chip",
+				"value": "0 1px 2px rgb(46 58 49 / 0.08)",
+				"purpose": "Lifts white chips, fields and soft buttons off a pastel."
+			},
+			{
+				"name": "float",
+				"value": "0 2px 10px rgb(46 58 49 / 0.08), 0 0 0 1px #ecefe6",
+				"purpose": "The capture box and the undo toast only."
+			}
+		],
+		"motion": [
+			{
+				"name": "drift",
+				"value": "drift 3s ease-in-out infinite (translateY 0 to -4px, rotate -3deg to 3deg)",
+				"purpose": "The header butterfly; motion-safe only."
+			},
+			{
+				"name": "preview-tint",
+				"value": "background-color 300ms",
+				"purpose": "The preview easing to the chosen pile's pastel."
+			}
+		],
+		"breakpoints": [
+			{ "name": "sm", "value": "640px" },
+			{ "name": "lg", "value": "1024px" }
+		]
+	},
+	"components": [
+		{
+			"name": "Primary Button",
+			"kind": "button",
+			"refersTo": "button-primary",
+			"description": "Catch and Save. The one green action.",
+			"html": "<button class=\"ds-btn-primary\">Catch</button>",
+			"css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.25rem; border: 0; border-radius: 9999px; background: var(--color-leaf, #2f6b4f); color: #fff; font: 800 1rem/1.5 Nunito, ui-rounded, system-ui, sans-serif; transition: background-color 150ms; cursor: pointer; } .ds-btn-primary:hover { background: var(--color-leaf-dark, #1f4d37); } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-leaf, #2f6b4f); outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; background: var(--color-leaf, #2f6b4f); }"
+		},
+		{
+			"name": "Soft Button",
+			"kind": "button",
+			"refersTo": "button-soft",
+			"description": "White pill for secondary actions.",
+			"html": "<button class=\"ds-btn-soft\">Add pile</button>",
+			"css": ".ds-btn-soft { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: 9999px; background: #fff; color: var(--color-ink-soft, #3e4c42); font: 700 1rem/1.5 Nunito, ui-rounded, system-ui, sans-serif; box-shadow: 0 1px 2px rgb(46 58 49 / 0.08); transition: background-color 150ms; cursor: pointer; } .ds-btn-soft:hover { background: var(--color-leaf-tint, #dde9d0); } .ds-btn-soft:focus-visible { outline: 2px solid var(--color-leaf, #2f6b4f); outline-offset: 2px; }"
+		},
+		{
+			"name": "Quiet Button",
+			"kind": "button",
+			"refersTo": "button-quiet",
+			"description": "Unfilled pill for Cancel and low-stakes actions.",
+			"html": "<button class=\"ds-btn-quiet\">Cancel</button>",
+			"css": ".ds-btn-quiet { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1rem; border: 0; border-radius: 9999px; background: transparent; color: var(--color-ink-soft, #3e4c42); font: 700 1rem/1.5 Nunito, ui-rounded, system-ui, sans-serif; transition: background-color 150ms; cursor: pointer; } .ds-btn-quiet:hover { background: rgb(255 255 255 / 0.7); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--color-leaf, #2f6b4f); outline-offset: 2px; }"
+		},
+		{
+			"name": "Capture Box",
+			"kind": "custom",
+			"refersTo": "capture-box",
+			"description": "The front door: net glyph, borderless textarea, Catch.",
+			"html": "<form class=\"ds-capture\"><svg class=\"ds-capture-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9.5\" cy=\"9.5\" r=\"6.5\"/><path d=\"M14.5 14.5 21 21\"/><path d=\"M5 9.5h9M9.5 5v9\"/></svg><textarea class=\"ds-capture-text\" rows=\"2\" placeholder=\"What's fluttering around?\"></textarea><button type=\"button\" class=\"ds-capture-btn\">Catch</button></form>",
+			"css": ".ds-capture { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 0.75rem 0.75rem 1.25rem; border-radius: 1.75rem; background: #fff; box-shadow: 0 2px 10px rgb(46 58 49 / 0.08), 0 0 0 1px #ecefe6; } .ds-capture-icon { width: 1.5rem; height: 1.5rem; margin-top: 0.75rem; flex-shrink: 0; color: var(--color-leaf, #2f6b4f); } .ds-capture-text { flex: 1; min-width: 0; resize: none; border: 0; background: transparent; padding: 0.5rem 0; color: var(--color-ink, #2e3a31); font: 600 1.125rem/1.556 Nunito, ui-rounded, system-ui, sans-serif; outline: none; } .ds-capture-text::placeholder { font-weight: 500; color: var(--color-muted, #5e6b61); } .ds-capture-btn { align-self: center; min-height: 2.75rem; padding: 0 1.25rem; border: 0; border-radius: 9999px; background: var(--color-leaf, #2f6b4f); color: #fff; font: 800 1rem/1.5 Nunito, ui-rounded, system-ui, sans-serif; cursor: pointer; transition: background-color 150ms; } .ds-capture-btn:hover { background: var(--color-leaf-dark, #1f4d37); } .ds-capture-btn:focus-visible { outline: 2px solid var(--color-leaf, #2f6b4f); outline-offset: 2px; }"
+		},
+		{
+			"name": "Pile Patch with Cards",
+			"kind": "card",
+			"refersTo": "pile-patch",
+			"description": "A pastel patch with a count badge, a fresh card and an aged card.",
+			"html": "<section class=\"ds-pile\"><div class=\"ds-pile-head\"><h2 class=\"ds-pile-name\">house</h2><span class=\"ds-pile-count\">2</span></div><ul class=\"ds-pile-list\"><li class=\"ds-card\"><button class=\"ds-card-done\" aria-label=\"Mark done\"><svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.5\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg></button><a class=\"ds-card-title\" href=\"#\">Pick up batteries for smoke detectors</a></li><li class=\"ds-card ds-card-yellow\"><button class=\"ds-card-done\" aria-label=\"Mark done\"><svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.5\" stroke=\"currentColor\" stroke-width=\"1.8\"/></svg></button><a class=\"ds-card-title\" href=\"#\">Fix the squeaky hinge</a><span class=\"ds-card-age\">5w</span></li></ul></section>",
+			"css": ".ds-pile { display: flex; flex-direction: column; gap: 0.75rem; min-height: 10rem; padding: 1rem; border-radius: 1.5rem; background: var(--color-pile-sage, #dde9d0); font-family: Nunito, ui-rounded, system-ui, sans-serif; color: var(--color-ink, #2e3a31); } .ds-pile-head { display: flex; align-items: center; justify-content: space-between; padding: 0 0.375rem; } .ds-pile-name { margin: 0; font-size: 1.125rem; font-weight: 800; } .ds-pile-count { padding: 0.125rem 0.625rem; border-radius: 9999px; background: rgb(255 255 255 / 0.7); color: var(--color-ink-soft, #3e4c42); font-size: 0.875rem; font-weight: 800; } .ds-pile-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; } .ds-card { display: flex; align-items: center; gap: 0.25rem; padding: 0.375rem 0.875rem 0.375rem 0.375rem; border-radius: 1rem; background: #fff; box-shadow: 0 1px 2px rgb(46 58 49 / 0.08); } .ds-card-yellow { background: var(--color-paper-yellow, #f8ebc6); box-shadow: 0 1px 2px rgb(46 58 49 / 0.08), 0 0 0 1px rgb(122 82 12 / 0.2); } .ds-card-done { display: flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; border: 0; border-radius: 9999px; background: transparent; color: var(--color-muted, #5e6b61); cursor: pointer; } .ds-card-done svg { width: 1.25rem; height: 1.25rem; } .ds-card-done:hover { background: var(--color-leaf-tint, #dde9d0); color: var(--color-leaf, #2f6b4f); } .ds-card-done:focus-visible { outline: 2px solid var(--color-leaf, #2f6b4f); } .ds-card-title { font-weight: 700; line-height: 1.375; color: inherit; text-decoration: none; } .ds-card-title:hover { text-decoration: underline; } .ds-card-age { margin-left: auto; padding-left: 0.5rem; font-size: 0.875rem; font-weight: 800; color: var(--color-paper-ink, #7a520c); }"
+		},
+		{
+			"name": "Field",
+			"kind": "input",
+			"refersTo": "field",
+			"description": "White rounded field; focus turns leaf green.",
+			"html": "<input class=\"ds-field\" placeholder=\"Search your cards\">",
+			"css": ".ds-field { width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--color-line, #ecefe6); border-radius: 1rem; background: #fff; color: var(--color-ink, #2e3a31); font: 600 1rem/1.5 Nunito, ui-rounded, system-ui, sans-serif; box-shadow: 0 1px 2px rgb(46 58 49 / 0.08); outline: none; } .ds-field::placeholder { font-weight: 500; color: var(--color-muted, #5e6b61); } .ds-field:focus { border-color: var(--color-leaf, #2f6b4f); box-shadow: 0 0 0 1px var(--color-leaf, #2f6b4f); }"
+		},
+		{
+			"name": "Header Navigation",
+			"kind": "nav",
+			"description": "Drifting butterfly wordmark, quiet links, email chip.",
+			"html": "<nav class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\"><span class=\"ds-brand-mark\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 7v12\"/><path d=\"M12 9c-2-4-7-5-8-2s2 6 8 6\"/><path d=\"M12 9c2-4 7-5 8-2s-2 6-8 6\"/><path d=\"M12 13c-2 0-6 1-6 4s4 2 6-1\"/><path d=\"M12 13c2 0 6 1 6 4s-4 2-6-1\"/><path d=\"M10 7l-1.5-2M14 7l1.5-2\"/></svg></span>Butterfly Net</a><div class=\"ds-links\"><a href=\"#\" aria-current=\"page\">Piles</a><a href=\"#\">Search</a><a href=\"#\">Archive</a><span class=\"ds-email\">you@example.com</span></div></nav>",
+			"css": ".ds-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.5rem; font-family: Nunito, ui-rounded, system-ui, sans-serif; } .ds-brand { display: flex; align-items: center; gap: 0.625rem; font-size: 1.25rem; font-weight: 800; color: var(--color-ink, #2e3a31); text-decoration: none; } .ds-brand-mark { display: flex; align-items: center; justify-content: center; width: 2.5rem; height: 2.5rem; border-radius: 9999px; background: var(--color-leaf-tint, #dde9d0); color: var(--color-leaf, #2f6b4f); } .ds-brand-mark svg { width: 1.5rem; height: 1.5rem; } @media (prefers-reduced-motion: no-preference) { .ds-brand-mark { animation: ds-drift 3s ease-in-out infinite; } } @keyframes ds-drift { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-4px) rotate(3deg); } } .ds-links { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; } .ds-links a { font-weight: 700; color: var(--color-muted, #5e6b61); text-decoration: none; } .ds-links a:hover, .ds-links a[aria-current=page] { color: var(--color-ink, #2e3a31); } .ds-email { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0.25rem 0.75rem; border-radius: 9999px; background: #fff; color: var(--color-muted, #5e6b61); font-size: 0.875rem; font-weight: 600; box-shadow: 0 1px 2px rgb(46 58 49 / 0.08); }"
+		}
+	],
+	"narrative": {
+		"northStar": "The Butterfly Garden",
+		"overview": "Butterfly Net is a garden where thoughts land. The ground is a warm off-white. Piles are soft pastel patches, like flower beds. Each card is a white chip resting on its patch. One deep leaf green marks what's alive and actionable: the Catch and Save buttons, the butterfly, focus. Everything is rounded, from Nunito's letterforms to pill buttons and patch corners. The garden should feel friendly and lived-in, never busy.\n\nThe system is light and nearly flat. Depth comes from colour, white chips on pastel patches on the ground, with only a breath of shadow to lift a chip or float the capture box. Motion is limited to the butterfly drifting gently in the header and colour easing in the preview. Copy speaks in the same voice (\"What's fluttering around?\", \"Nothing here yet. Nice and quiet.\"), so words and shapes carry the warmth together.\n\nIt is grown-up playfulness. It is not a productivity dashboard with charts, priority flags, red badges or dense tables. It is not a dark, techy \"AI\" look with glowing gradients or sparkle icons; Claude's work shows up as a plain sentence in the preview. It is not cartoony either: no mascots and no bouncing.",
+		"keyCharacteristics": [
+			"Warm off-white ground, one leaf-green accent, six pastel pile colours.",
+			"Rounded everything: Nunito type, pill buttons, generously curved patches.",
+			"Depth by colour layering (ground → pastel patch → white chip), with whisper-soft shadows.",
+			"Heavy type weights (700–800) at modest sizes; friendly rather than loud.",
+			"Cards age like paper: cream, then yellow, then deep yellow, with a small age label."
+		],
+		"rules": [
+			{
+				"name": "The One Green Rule",
+				"body": "Leaf Green is the only saturated colour and it always means \"act here\" or \"this worked\". Pastels decorate; they never mark an action.",
+				"section": "colors"
+			},
+			{
+				"name": "The Pastels Are Places Rule",
+				"body": "A pile colour belongs to a pile. Don't use pastels as generic decoration, status colours or highlights.",
+				"section": "colors"
+			},
+			{
+				"name": "The One Family Rule",
+				"body": "Nunito only. Build hierarchy from weight (500/600/700/800) and the 0.875–1.25rem range. Don't add a display face or go under 0.875rem.",
+				"section": "typography"
+			},
+			{
+				"name": "The Medium Placeholder Rule",
+				"body": "Placeholders drop to weight 500 in Moss Grey, so they never look like typed text.",
+				"section": "typography"
+			},
+			{
+				"name": "The Float Is Rare Rule",
+				"body": "Only the capture box and transient toasts float. Piles never cast shadows; they lie flat on the ground.",
+				"section": "elevation"
+			}
+		],
+		"dos": [
+			"Do keep Leaf Green (`#2f6b4f`) for actions and success only, per the One Green Rule.",
+			"Do build depth by layering Garden Ground → pastel → Petal White before reaching for a shadow, and use only the Chip and Float shadows.",
+			"Do round everything: pills for buttons and badges, 1rem for chips and fields, 1.5rem for patches, 1.75rem for the capture surface.",
+			"Do keep tap targets at least 44px and keep Moss Grey (`#5e6b61`) as the lightest text colour on the ground, to meet WCAG 2.2 AA.",
+			"Do give empty and waiting states a warm line of copy and, at most, a small butterfly.",
+			"Do wrap decorative motion in `motion-safe` and keep it slow and small (3s, 4px)."
+		],
+		"donts": [
+			"Don't add dashboard furniture: charts, priority flags, red notification badges, progress rings or dense tables.",
+			"Don't style Claude as \"AI magic\": no glowing gradients, sparkle icons, purple-blue shimmer or dark techy panels. Claude appears as a plain sentence in the preview.",
+			"Don't go cartoony: no mascots, no bouncy or springy animation, no illustrations beyond the single-stroke butterfly.",
+			"Don't add a second typeface or set text below 0.875rem.",
+			"Don't use pile pastels for anything except piles, or saturate them.",
+			"Don't add dark shadows, hard corners or boxed hairline borders around piles."
+		]
+	}
+}

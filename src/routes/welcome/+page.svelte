@@ -23,7 +23,15 @@
 		>
 	</div>
 	<div class="mt-5">
-		<IntroDemo />
+		<IntroDemo>
+			{#snippet skip()}
+				<a
+					href={resolve(`/signup?invite=${encodeURIComponent(data.invite)}`)}
+					class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink"
+					>Go straight to sign-up</a
+				>
+			{/snippet}
+		</IntroDemo>
 	</div>
 	<a
 		href={resolve(`/signup?invite=${encodeURIComponent(data.invite)}`)}

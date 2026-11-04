@@ -11,12 +11,14 @@ test('shows the five default piles', async ({ page }) => {
 	}
 });
 
-test("Claude's pile is preselected, and the card lands on it", async ({ page }) => {
+test("the AI's pile is preselected, and the card lands on it", async ({ page }) => {
 	await page.getByLabel('Catch a thought').fill('Paint the X-wing canopy');
 	await page.getByRole('button', { name: 'Catch' }).click();
 	const preview = page.getByRole('form', { name: 'Card preview' });
 	await expect(preview.getByLabel('Title')).toHaveValue('Paint the X-wing canopy');
 	await expect(preview.getByLabel('Pile').locator('option:checked')).toHaveText('model building');
+	await expect(preview).toContainText('AI thinks this belongs on model building.');
+	await expect(preview).not.toContainText('Claude');
 	await preview.getByRole('button', { name: 'Save' }).click();
 
 	await expect(page.getByRole('status').filter({ hasText: 'Caught ✓' })).toBeVisible();
@@ -34,7 +36,7 @@ test('accepting a proposed new pile creates it', async ({ page }) => {
 	await expect(page.getByRole('region', { name: 'garden' })).toContainText('Plant tomatoes');
 });
 
-test('when Claude is down, the thought is still caught', async ({ page }) => {
+test('when the AI is down, the thought is still caught', async ({ page }) => {
 	await page.getByLabel('Catch a thought').fill('[fail] Call the plumber');
 	await page.getByRole('button', { name: 'Catch' }).click();
 	const preview = page.getByRole('form', { name: 'Card preview' });
@@ -171,7 +173,7 @@ test.describe('daily allowance', () => {
 		await page.getByRole('button', { name: 'Catch' }).click();
 		const preview = page.getByRole('form', { name: 'Card preview' });
 		await expect(preview.getByRole('status')).toHaveText(
-			"You've used today's 20 Claude sorts. Pick a pile yourself; sorting is back tomorrow."
+			"You've used today's 20 AI sorts. Pick a pile yourself; sorting is back tomorrow."
 		);
 		await expect(preview.getByRole('button', { name: 'Save' })).toBeDisabled();
 		await preview.getByLabel('Pile').selectOption({ label: 'model building' });
@@ -191,7 +193,7 @@ test.describe('daily allowance', () => {
 		const preview = page.getByRole('form', { name: 'Card preview' });
 		await expect(preview).toBeVisible();
 		await expect(preview.getByRole('button', { name: 'Save' })).toBeEnabled();
-		await expect(preview.getByText(/used today's 20 Claude sorts/)).toHaveCount(0);
+		await expect(preview.getByText(/used today's 20 AI sorts/)).toHaveCount(0);
 	});
 });
 

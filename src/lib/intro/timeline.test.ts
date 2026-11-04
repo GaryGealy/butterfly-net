@@ -31,7 +31,9 @@ describe('the script', () => {
 		expect(SCENES[0].caption).toBe(
 			'A thought pops up? Catch it before it flutters off, from your Mac or your phone.'
 		);
-		expect(END_CAPTION).toBe("Catch it, let Claude sort it, come back when you're ready.");
+		expect(END_CAPTION).toBe("Catch it, let AI sort it, come back when you're ready.");
+		expect(SCENES[1].title).toBe('AI sorts it');
+		expect(SCENES.some((s) => /Claude/.test(s.title + s.caption))).toBe(false);
 		expect(START).toEqual(at(0, 0));
 	});
 });

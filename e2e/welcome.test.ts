@@ -117,13 +117,14 @@ test('with reduced motion nothing plays and the scenes switch by hand', async ({
 	await watch(page);
 	await expect(page.getByRole('button', { name: 'Scene 1: Catch a thought' })).toBeFocused();
 	await expect(page.getByRole('button', { name: 'Pause' })).toHaveCount(0);
-	const scene2 = page.getByRole('button', { name: 'Scene 2: Claude sorts it' });
+	const scene2 = page.getByRole('button', { name: 'Scene 2: AI sorts it' });
 	await expect(caption(page)).toContainText('Catch it before it flutters off');
 	await scene2.click();
 	await expect(scene2).toHaveAttribute('aria-pressed', 'true');
-	await expect(caption(page)).toContainText('Claude suggests a pile');
+	await expect(caption(page)).toContainText('AI suggests a pile');
 	await page.waitForTimeout(500);
-	await expect(caption(page)).toContainText('Claude suggests a pile');
+	await expect(page.locator('main')).not.toContainText('Claude');
+	await expect(caption(page)).toContainText('AI suggests a pile');
 });
 
 test('with 200% text on a 320px phone the intro fits without sideways scrolling', async ({

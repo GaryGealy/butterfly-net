@@ -19,8 +19,8 @@ export const SCENES: readonly Scene[] = [
 	},
 	{
 		id: 'sort',
-		title: 'Claude sorts it',
-		caption: 'Claude suggests a pile. Change anything you like, then save.',
+		title: 'AI sorts it',
+		caption: 'AI suggests a pile. Change anything you like, then save.',
 		duration: 12_000
 	},
 	{
@@ -31,9 +31,9 @@ export const SCENES: readonly Scene[] = [
 	}
 ];
 
-export const END_CAPTION = "Catch it, let Claude sort it, come back when you're ready.";
+export const END_CAPTION = "Catch it, let AI sort it, come back when you're ready.";
 
-/** What gets typed in scene 1, and the title Claude tidies it to. */
+/** What gets typed in scene 1, and the title the AI tidies it to. */
 export const THOUGHT = 'fix the squeaky hinge on the back door';
 export const TIDY_TITLE = 'Fix the squeaky hinge on the back door';
 

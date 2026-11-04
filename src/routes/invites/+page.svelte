@@ -24,7 +24,7 @@
 		setTimeout(() => (copied = copied === link ? null : copied), 2000);
 	}
 
-	const linkFor = (code: string) => `${data.origin}/signup?invite=${code}`;
+	const linkFor = (code: string) => `${data.origin}/welcome?invite=${code}`;
 	const day = (date: Date) =>
 		date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 </script>

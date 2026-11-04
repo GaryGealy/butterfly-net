@@ -23,8 +23,7 @@ test('marking a card done moves focus to the next card, and Undo brings it back'
 
 	const first = page.getByRole('button', { name: 'Mark "Sweep the porch" done' });
 	const second = page.getByRole('button', { name: 'Mark "Clean the gutters" done' });
-	await first.focus();
-	await page.keyboard.press('Enter');
+	await first.press('Enter');
 	await expect(first).toHaveCount(0);
 	await expect(second).toBeFocused();
 
@@ -35,8 +34,7 @@ test('marking a card done moves focus to the next card, and Undo brings it back'
 test('the last card on a pile hands focus to the pile', async ({ page }) => {
 	await signUp(page);
 	await capture(page, 'Book a dentist visit', 'ideas');
-	await page.getByRole('button', { name: 'Mark "Book a dentist visit" done' }).focus();
-	await page.keyboard.press('Enter');
+	await page.getByRole('button', { name: 'Mark "Book a dentist visit" done' }).press('Enter');
 	await expect(page.getByRole('region', { name: 'ideas' })).toBeFocused();
 });
 
@@ -46,12 +44,10 @@ test('card page buttons that swap keep focus', async ({ page }) => {
 	await page.getByRole('link', { name: 'Fix the fence' }).click();
 	await waitForHydration(page);
 
-	await page.getByRole('button', { name: 'Mark done' }).focus();
-	await page.keyboard.press('Enter');
+	await page.getByRole('button', { name: 'Mark done' }).press('Enter');
 	await expect(page.getByRole('button', { name: 'Reopen' })).toBeFocused();
 
-	await page.getByRole('button', { name: 'Delete card' }).focus();
-	await page.keyboard.press('Enter');
+	await page.getByRole('button', { name: 'Delete card' }).press('Enter');
 	await expect(page.getByRole('button', { name: 'Keep it' })).toBeFocused();
 	await page.keyboard.press('Enter');
 	await expect(page.getByRole('button', { name: 'Delete card' })).toBeFocused();
@@ -68,8 +64,7 @@ test('reopening from the archive moves focus to the next archived card', async (
 
 	await gotoReady(page, '/archive');
 	const reopen = page.getByRole('button', { name: 'Reopen' });
-	await reopen.first().focus();
-	await page.keyboard.press('Enter');
+	await reopen.first().press('Enter');
 	await expect(reopen).toHaveCount(1);
 	await expect(reopen).toBeFocused();
 	await page.keyboard.press('Enter');
@@ -79,8 +74,7 @@ test('reopening from the archive moves focus to the next archived card', async (
 test('moving a pile keeps focus on its arrows', async ({ page }) => {
 	await signUp(page);
 	await gotoReady(page, '/piles');
-	await page.getByRole('button', { name: 'Move work stuff up' }).focus();
-	await page.keyboard.press('Enter');
+	await page.getByRole('button', { name: 'Move work stuff up' }).press('Enter');
 	// work stuff is now first, so its up arrow is disabled and focus moves to its down arrow.
 	await expect(page.getByRole('button', { name: 'Move work stuff down' })).toBeFocused();
 	await page.keyboard.press('Enter');

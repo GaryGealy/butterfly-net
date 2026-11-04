@@ -306,6 +306,13 @@ A three-segment progress bar jumps between scenes; one button pauses, plays and,
 reads "Watch again". The demo pauses while the tab is hidden. Under reduced motion nothing
 plays: each scene shows settled and the segments switch between them.
 
+Nothing plays on arrival. The demo waits on its first frame under a Ground wash with a white
+card: "New to Butterfly Net?", "A 35-second look at how it works.", a primary **Watch the demo**
+(play glyph) and a quiet **Go straight to sign-up** link. Watch fades the card (200ms, none under
+reduced motion), starts playback and moves focus to Pause (or Scene 1 under reduced motion).
+Captions and controls appear only once it starts. Card and picture share one grid cell, so with
+large text the card grows the cell rather than being clipped; below 22rem its padding tightens.
+
 ### Pile Patches
 
 A pastel rounded block (1.5rem corners, 1rem padding, no shadow). It has the pile name in

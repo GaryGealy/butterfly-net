@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { PASSWORD, createInviteCode, gotoReady, signUp } from './helpers';
 
 const caption = (page: Page) => page.locator('[data-caption]');
+const watch = (page: Page) => page.getByRole('button', { name: 'Watch the demo' }).click();
 
 test('an invite link opens the intro, and Skip reaches sign-up with the invite', async ({
 	page
@@ -10,9 +11,34 @@ test('an invite link opens the intro, and Skip reaches sign-up with the invite',
 	await gotoReady(page, `/welcome?invite=${code}`);
 	await expect(page).toHaveTitle('Welcome · Butterfly Net');
 	await expect(page.getByRole('heading', { level: 1 })).toHaveText("Here's Butterfly Net");
-	await expect(caption(page)).toContainText('Catch it before it flutters off');
 
 	await page.getByRole('link', { name: 'Skip to sign-up' }).click();
+	await expect(page).toHaveURL(`/signup?invite=${code}`);
+	await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+});
+
+test('the intro waits for a choice: nothing plays until Watch the demo', async ({ page }) => {
+	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
+	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toBeVisible();
+	await expect(caption(page)).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Pause' })).toHaveCount(0);
+	await page.waitForTimeout(600);
+	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toBeVisible();
+
+	await watch(page);
+	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Pause' })).toBeFocused();
+	await expect(caption(page)).toContainText('Catch it before it flutters off');
+	const fill = page
+		.getByRole('button', { name: 'Scene 1: Catch a thought' })
+		.locator('[data-fill]');
+	await expect(fill).not.toHaveAttribute('data-fill', '0.000');
+});
+
+test("the card's Go straight to sign-up reaches the form with the invite", async ({ page }) => {
+	const code = createInviteCode();
+	await gotoReady(page, `/welcome?invite=${code}`);
+	await page.getByRole('link', { name: 'Go straight to sign-up' }).click();
 	await expect(page).toHaveURL(`/signup?invite=${code}`);
 	await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
 });
@@ -57,6 +83,7 @@ test('old sign-up links still work without the intro', async ({ page }) => {
 
 test('pause holds the demo still, and a scene can be picked', async ({ page }) => {
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
+	await watch(page);
 	await page.getByRole('button', { name: 'Pause' }).click();
 	const fill = page
 		.getByRole('button', { name: 'Scene 1: Catch a thought' })
@@ -72,6 +99,7 @@ test('pause holds the demo still, and a scene can be picked', async ({ page }) =
 
 test('hiding the tab pauses the demo and coming back resumes it', async ({ page }) => {
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
+	await watch(page);
 	const setHidden = (hidden: boolean) =>
 		page.evaluate((h) => {
 			Object.defineProperty(document, 'hidden', { value: h, configurable: true });
@@ -86,6 +114,8 @@ test('hiding the tab pauses the demo and coming back resumes it', async ({ page 
 test('with reduced motion nothing plays and the scenes switch by hand', async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
+	await watch(page);
+	await expect(page.getByRole('button', { name: 'Scene 1: Catch a thought' })).toBeFocused();
 	await expect(page.getByRole('button', { name: 'Pause' })).toHaveCount(0);
 	const scene2 = page.getByRole('button', { name: 'Scene 2: Claude sorts it' });
 	await expect(caption(page)).toContainText('Catch it before it flutters off');
@@ -102,9 +132,20 @@ test('with 200% text on a 320px phone the intro fits without sideways scrolling'
 	await page.setViewportSize({ width: 320, height: 800 });
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
 	await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
-	const overflow = await page.evaluate(
-		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
-	);
-	expect(overflow).toBe(0);
+	const overflow = () =>
+		page.evaluate(
+			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+		);
+	expect(await overflow()).toBe(0);
+	// The card may sit below the fold at this size, but it must never be cut off.
+	for (const control of [
+		page.getByRole('button', { name: 'Watch the demo' }),
+		page.getByRole('link', { name: 'Go straight to sign-up' })
+	]) {
+		await control.scrollIntoViewIfNeeded();
+		await expect(control).toBeInViewport({ ratio: 1 });
+	}
+	await watch(page);
+	expect(await overflow()).toBe(0);
 	await expect(page.getByRole('link', { name: 'Create my account' })).toBeVisible();
 });

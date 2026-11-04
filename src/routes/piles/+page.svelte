@@ -1,9 +1,27 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { tick } from 'svelte';
+	import { enhance, type SubmitFunction } from '$app/forms';
+	import { focusById, neighbourFocusId } from '#lib/focus.ts';
 	import { MAX_PILE_NAME_LENGTH } from '#lib/limits.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data, form } = $props();
+
+	// A moved pile's button follows it to its new spot. At the top or bottom that button is
+	// disabled, so focus goes to the other arrow.
+	const keepMoveFocus: SubmitFunction = ({ submitter }) => {
+		const id = submitter?.id;
+		return async ({ update }) => {
+			await update();
+			await tick();
+			const button = id ? document.getElementById(id) : null;
+			const other = id?.replace(
+				/^move-(up|down)/,
+				(_, d: string) => `move-${d === 'up' ? 'down' : 'up'}`
+			);
+			await focusById(button instanceof HTMLButtonElement && button.disabled ? other : id);
+		};
+	};
 </script>
 
 <svelte:head><title>Manage piles · Butterfly Net</title></svelte:head>
@@ -29,22 +47,62 @@
 					use:enhance={() =>
 						async ({ update }) =>
 							update({ reset: false })}
-					class="flex min-w-0 flex-1 gap-2"
+					class="flex min-w-0 flex-1 flex-wrap gap-2"
 				>
 					<input type="hidden" name="id" value={pile.id} />
 					<input
+						id={`pile-name-${pile.id}`}
 						name="name"
 						value={pile.name}
 						required
 						maxlength={MAX_PILE_NAME_LENGTH}
 						aria-label={`Name for ${pile.name}`}
-						class="field min-w-0 flex-1 shadow-none"
+						class="field min-w-0 flex-1 basis-32 shadow-none"
 					/>
 					<button class="btn-soft">Rename</button>
 				</form>
-				<form method="POST" action="?/move" use:enhance class="flex gap-1">
+			</div>
+			<div class="mt-2 flex flex-wrap items-center gap-2 pl-6">
+				<form
+					method="POST"
+					action="?/delete"
+					use:enhance={({ formElement }) => {
+						const next = neighbourFocusId(formElement, 'input[id^="pile-name-"]', 'new-pile');
+						return async ({ result, update }) => {
+							await update();
+							if (result.type === 'success') await focusById(next);
+						};
+					}}
+					class="flex flex-wrap items-center gap-2 text-sm font-bold"
+				>
+					<input type="hidden" name="id" value={pile.id} />
+					<span class="text-muted">{pile.card_count} card{pile.card_count === 1 ? '' : 's'}</span>
+					{#if pile.card_count > 0 && data.piles.length > 1}
+						<label for={`reassign-${pile.id}`} class="sr-only">Move {pile.name}'s cards to</label>
+						<select
+							id={`reassign-${pile.id}`}
+							name="reassignTo"
+							required
+							class="field min-h-11 w-auto rounded-full py-2 pr-9 pl-3 text-sm shadow-none"
+						>
+							<option value="">Move cards to…</option>
+							{#each data.piles.filter((p) => p.id !== pile.id) as target (target.id)}
+								<option value={target.id}>{target.name}</option>
+							{/each}
+						</select>
+					{/if}
+					{#if data.piles.length > 1}
+						<button aria-label={`Delete ${pile.name}`} class="btn-danger px-3 text-sm"
+							>Delete</button
+						>
+					{:else}
+						<span class="text-muted">· your last pile can’t be deleted</span>
+					{/if}
+				</form>
+				<form method="POST" action="?/move" use:enhance={keepMoveFocus} class="ml-auto flex gap-1">
 					<input type="hidden" name="id" value={pile.id} />
 					<button
+						id={`move-up-${pile.id}`}
 						name="direction"
 						value="up"
 						disabled={i === 0}
@@ -62,6 +120,7 @@
 						</svg>
 					</button>
 					<button
+						id={`move-down-${pile.id}`}
 						name="direction"
 						value="down"
 						disabled={i === data.piles.length - 1}
@@ -80,41 +139,11 @@
 					</button>
 				</form>
 			</div>
-			<form
-				method="POST"
-				action="?/delete"
-				use:enhance
-				class="mt-2 flex flex-wrap items-center gap-2 pl-6 text-sm font-bold"
-			>
-				<input type="hidden" name="id" value={pile.id} />
-				<span class="text-muted">{pile.card_count} card{pile.card_count === 1 ? '' : 's'}</span>
-				{#if pile.card_count > 0 && data.piles.length > 1}
-					<label for={`reassign-${pile.id}`} class="sr-only">Move {pile.name}'s cards to</label>
-					<select
-						id={`reassign-${pile.id}`}
-						name="reassignTo"
-						required
-						class="field w-auto rounded-full py-1.5 pr-9 pl-3 text-sm shadow-none"
-					>
-						<option value="">Move cards to…</option>
-						{#each data.piles.filter((p) => p.id !== pile.id) as target (target.id)}
-							<option value={target.id}>{target.name}</option>
-						{/each}
-					</select>
-				{/if}
-				{#if data.piles.length > 1}
-					<button aria-label={`Delete ${pile.name}`} class="btn-danger min-h-9 px-3 text-sm"
-						>Delete</button
-					>
-				{:else}
-					<span class="text-muted">· your last pile can’t be deleted</span>
-				{/if}
-			</form>
 		</li>
 	{/each}
 </ul>
 
-<form method="POST" action="?/create" use:enhance class="mt-6 flex max-w-2xl gap-2">
+<form method="POST" action="?/create" use:enhance class="mt-6 flex max-w-2xl flex-wrap gap-2">
 	<label for="new-pile" class="sr-only">New pile name</label>
 	<input
 		id="new-pile"
@@ -122,7 +151,7 @@
 		required
 		maxlength={MAX_PILE_NAME_LENGTH}
 		placeholder="New pile…"
-		class="field min-w-0 flex-1 rounded-full px-5"
+		class="field min-w-0 flex-1 basis-40 rounded-full px-5"
 	/>
 	<button class="btn-primary shrink-0">Add pile</button>
 </form>

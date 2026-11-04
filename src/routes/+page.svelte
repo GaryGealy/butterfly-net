@@ -5,6 +5,7 @@
 	import Butterfly from '#lib/components/Butterfly.svelte';
 	import CaptureBox from '#lib/components/CaptureBox.svelte';
 	import { cardAge, type AgeStage } from '#lib/card-age.ts';
+	import { focusById, neighbourFocusId } from '#lib/focus.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
 	let { data } = $props();
@@ -38,22 +39,28 @@
 
 <svelte:window onkeydown={focusCaptureOnN} />
 
+<h1 class="sr-only">Your piles</h1>
+
 <CaptureBox bind:this={capture} piles={pileRefs} onSaved={invalidateAll} autofocus />
 
-<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+<div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 	{#each data.piles as pile, i (pile.id)}
 		<section
+			id={`pile-section-${pile.id}`}
 			aria-labelledby={`pile-${pile.id}`}
+			tabindex="-1"
 			class="flex min-h-40 flex-col gap-3 rounded-patch p-4 {pileColor(i)}"
 		>
 			<div class="flex items-center justify-between gap-3 px-1.5">
-				<h2 id={`pile-${pile.id}`} class="text-lg font-extrabold">{pile.name}</h2>
+				<h2 id={`pile-${pile.id}`} class="min-w-0 text-lg font-extrabold [overflow-wrap:anywhere]">
+					{pile.name}
+				</h2>
 				<span class="rounded-full bg-white/70 px-2.5 py-0.5 text-sm font-extrabold text-ink-soft"
 					>{pile.cards.length}</span
 				>
 			</div>
 			{#if pile.cards.length === 0}
-				<p class="flex items-center gap-2 px-1.5 font-bold text-muted">
+				<p class="flex items-center gap-2 px-1.5 font-bold text-ink-soft">
 					<Butterfly class="size-5" />
 					Nothing here yet. Nice and quiet.
 				</p>
@@ -68,13 +75,22 @@
 							<form
 								method="POST"
 								action="?/done"
-								use:enhance={() => {
+								use:enhance={({ formElement }) => {
 									showUndo({ id: card.id, title: card.title });
-									return async ({ update }) => update();
+									const next = neighbourFocusId(
+										formElement,
+										'button[id^="done-"]',
+										`pile-section-${pile.id}`
+									);
+									return async ({ update }) => {
+										await update();
+										await focusById(next);
+									};
 								}}
 							>
 								<input type="hidden" name="id" value={card.id} />
 								<button
+									id={`done-${card.id}`}
 									aria-label={`Mark "${card.title}" done`}
 									class="flex size-11 items-center justify-center rounded-full text-muted hover:bg-leaf-tint hover:text-leaf"
 								>
@@ -85,7 +101,8 @@
 							</form>
 							<a
 								href={resolve('/card/[id]', { id: card.id })}
-								class="leading-snug font-bold hover:underline">{card.title}</a
+								class="flex min-h-11 min-w-0 flex-1 items-center leading-snug font-bold [overflow-wrap:anywhere] hover:underline"
+								>{card.title}</a
 							>
 							{#if age.label}
 								<span
@@ -107,19 +124,24 @@
 {#if undo}
 	<div
 		role="status"
-		class="fixed inset-x-0 bottom-5 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full bg-white py-2 pr-2 pl-5 text-sm font-bold shadow-float"
+		class="fixed inset-x-0 bottom-5 mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-3 rounded-full bg-white py-1.5 pr-1.5 pl-5 text-sm font-bold shadow-float"
 	>
 		<span class="truncate">Done: {undo.title}</span>
 		<form
 			method="POST"
 			action="?/reopen"
 			use:enhance={() => {
+				const reopened = undo?.id;
 				undo = null;
-				return async ({ update }) => update();
+				return async ({ update }) => {
+					await update();
+					await focusById(reopened && `done-${reopened}`);
+				};
 			}}
 		>
 			<input type="hidden" name="id" value={undo.id} />
-			<button class="rounded-full bg-leaf-tint px-3.5 py-2 font-extrabold text-leaf-dark"
+			<button
+				class="inline-flex min-h-11 items-center rounded-full bg-leaf-tint px-4 font-extrabold text-leaf-dark"
 				>Undo</button
 			>
 		</form>

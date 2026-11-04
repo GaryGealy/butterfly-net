@@ -187,8 +187,9 @@ generic decoration, status colours or highlights.
 
 ## Typography
 
-**Body Font:** Nunito (with ui-rounded, system-ui, sans-serif), weights 500, 700 and 800
-from Google Fonts.
+**Body Font:** Nunito (with ui-rounded, system-ui, sans-serif), self-hosted as one variable
+woff2 per subset (latin, latin-ext) in `src/lib/assets/fonts`, so 500, 600, 700 and 800 are
+all true weights.
 
 **Character:** a single rounded sans does everything. Hierarchy comes from weight and a
 small size step, not from a second family. The heavy weights read as friendly and sure of
@@ -279,6 +280,11 @@ fluttering around?" as placeholder, and a primary **Catch** button that reads "S
 while Claude works. Below it in Label type: "Press Enter to catch", and after a save a
 leaf-green "Caught ✓ It landed on {pile}."
 
+The textarea is at least two lines tall and grows with what's typed. When the box is
+narrower than 17rem (large text sizes), Catch drops to its own line, right-aligned, so the
+text keeps the width. The header and every page reflow without sideways scrolling up to
+200% text on a 320px phone.
+
 ### Card Preview (signature)
 
 Takes the place of the capture box once Claude replies. Its background is the target
@@ -292,7 +298,8 @@ and Cancel. Escape cancels.
 
 A pastel rounded block (1.5rem corners, 1rem padding, no shadow). It has the pile name in
 Title type and a count badge (a 70% white pill with Soft Bark 800 text). Empty patches
-show a small butterfly and "Nothing here yet. Nice and quiet." in Moss Grey.
+show a small butterfly and "Nothing here yet. Nice and quiet." in Soft Bark (Moss Grey
+falls below 4.5:1 on most pastels).
 
 ### Card Chips
 
@@ -306,14 +313,21 @@ Sepia Ink age label ("4w", "3mo", "1y"), with screen-reader text "caught 5 weeks
 
 `field`: white, 1rem corners, Pale Line border, chip shadow, 600-weight Bark text. Focus
 moves the border and ring to Leaf Green. Selects in the preview are pill-shaped. Inside
-the capture box and preview chip, inputs are borderless and transparent, with no focus
-ring, because the container is the field.
+the capture box and preview chip, inputs are borderless and transparent because the
+container is the field. The capture box shows focus as a 2px Leaf Green ring around the
+whole box. Each borderless field in the preview gets a 2px Leaf Green outline, 4px out,
+so you can see which one has focus.
+
+Everything else that takes keyboard focus (buttons, links) gets a 2px Leaf Green outline
+2px out (`:focus-visible` in the base layer). Text selection is New Shoot, and the text
+cursor is Leaf Green. Link underlines sit 0.2em below the text at 0.08em thick, clear of
+Nunito's descenders.
 
 ### Navigation
 
 The wordmark is the butterfly in a 40px New Shoot circle, drifting 4px with a ±3° rotation
 over 3s (only with `motion-safe`), next to "Butterfly Net" in Headline type. Links are
-700-weight Moss Grey, turning Bark on hover and for the current page. The signed-in email
+700-weight Moss Grey, turning Bark on hover and for the current page, each with a 44px-tall hit area. The signed-in email
 sits in a white pill chip, truncated past 16rem. On phones the row wraps rather than
 collapsing into a menu.
 

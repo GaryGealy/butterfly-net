@@ -31,7 +31,9 @@
 		<ul class="mt-6 max-w-2xl space-y-2">
 			{#each data.results as result (result.id)}
 				<li class="chip px-5 py-3">
-					<a href={resolve('/card/[id]', { id: result.id })} class="font-extrabold hover:underline"
+					<a
+						href={resolve('/card/[id]', { id: result.id })}
+						class="relative font-extrabold [overflow-wrap:anywhere] after:absolute after:-inset-x-2 after:-inset-y-3 hover:underline"
 						>{result.title}</a
 					>
 					<div class="mt-1 flex flex-wrap gap-2 text-sm font-bold text-muted">

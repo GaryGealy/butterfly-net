@@ -31,8 +31,11 @@
 
 {#if data.user && page.url.pathname !== '/quick-add'}
 	<header class="px-4 pt-5 pb-2 sm:px-8">
-		<nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-2">
-			<a href={resolve('/')} class="flex items-center gap-2.5 text-xl font-extrabold text-ink">
+		<nav class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-1">
+			<a
+				href={resolve('/')}
+				class="flex min-h-11 items-center gap-2.5 text-xl font-extrabold text-ink"
+			>
 				<span
 					class="flex size-10 items-center justify-center rounded-full bg-leaf-tint motion-safe:animate-drift"
 				>
@@ -40,29 +43,32 @@
 				</span>
 				Butterfly Net
 			</a>
-			<div class="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2">
+			<div class="ml-auto flex max-w-full min-w-0 flex-wrap items-center gap-x-5 gap-y-0">
 				{#each links as link (link.href)}
 					<a
 						href={resolve(link.href)}
-						class="font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
+						class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
 						aria-current={page.url.pathname === link.href ? 'page' : undefined}>{link.label}</a
 					>
 				{/each}
 				{#if data.isAdmin}
 					<a
 						href={resolve('/invites')}
-						class="font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
+						class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
 						aria-current={page.url.pathname === '/invites' ? 'page' : undefined}>Invites</a
 					>
 				{/if}
-				<div class="flex min-w-0 items-center gap-3">
+				<div class="flex max-w-full min-w-0 items-center gap-3">
 					<span
 						title={data.user.email}
 						class="max-w-64 truncate rounded-full bg-white px-3 py-1 text-sm font-semibold text-muted shadow-chip"
 						><span class="sr-only">Signed in as</span> {data.user.email}</span
 					>
 					<form method="POST" action="/logout">
-						<button class="font-bold text-muted hover:text-ink">Log out</button>
+						<button
+							class="inline-flex min-h-11 items-center font-bold whitespace-nowrap text-muted hover:text-ink"
+							>Log out</button
+						>
 					</form>
 				</div>
 			</div>

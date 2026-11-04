@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { cardAge } from '#lib/card-age.ts';
+	import { focusById } from '#lib/focus.ts';
 	import { MAX_NOTES_LENGTH, MAX_TITLE_LENGTH } from '#lib/limits.ts';
 	import { pileColor } from '#lib/pile-color.ts';
 
@@ -23,6 +24,14 @@
 	});
 	let confirmingDelete = $state(false);
 
+	// Mark done and Reopen swap places; keep focus on whichever one is showing now.
+	const keepStatusFocus =
+		() =>
+		async ({ update }: { update: () => Promise<void> }) => {
+			await update();
+			await focusById('status-toggle');
+		};
+
 	const age = $derived(cardAge(data.card.created_at, data.now));
 
 	// The card sits on a patch of its pile's colour.
@@ -31,7 +40,11 @@
 
 <svelte:head><title>{data.card.title} · Butterfly Net</title></svelte:head>
 
-<a href={resolve('/')} class="font-bold text-muted hover:text-ink">← Piles</a>
+<a href={resolve('/')} class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink"
+	>← Piles</a
+>
+
+<h1 class="sr-only">{data.card.title}</h1>
 
 <form
 	method="POST"
@@ -104,16 +117,25 @@
 							type="button"
 							aria-label={`Remove subtask ${i + 1}`}
 							onclick={() => rows.splice(i, 1)}
-							class="flex size-9 items-center justify-center rounded-full text-muted hover:bg-line hover:text-red-700"
-							>✕</button
+							class="flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-line hover:text-red-700"
 						>
+							<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+								><path
+									d="M7 7l10 10M17 7L7 17"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+								/></svg
+							>
+						</button>
 					</li>
 				{/each}
 			</ul>
 			<button
 				type="button"
 				onclick={() => rows.push({ text: '', done: false })}
-				class="mt-2 text-sm font-bold text-leaf hover:underline">Add subtask</button
+				class="mt-1 inline-flex min-h-11 items-center text-sm font-bold text-leaf hover:underline"
+				>Add subtask</button
 			>
 		</fieldset>
 	</div>
@@ -127,12 +149,12 @@
 
 <div class="mt-6 flex max-w-2xl flex-wrap items-center gap-3">
 	{#if data.card.status === 'active'}
-		<form method="POST" action="?/done" use:enhance>
-			<button class="btn-soft">Mark done</button>
+		<form method="POST" action="?/done" use:enhance={keepStatusFocus}>
+			<button id="status-toggle" class="btn-soft">Mark done</button>
 		</form>
 	{:else}
-		<form method="POST" action="?/reopen" use:enhance>
-			<button class="btn-soft">Reopen</button>
+		<form method="POST" action="?/reopen" use:enhance={keepStatusFocus}>
+			<button id="status-toggle" class="btn-soft">Reopen</button>
 		</form>
 	{/if}
 
@@ -143,14 +165,24 @@
 				class="inline-flex min-h-11 items-center rounded-full bg-red-700 px-4 font-extrabold text-white hover:bg-red-800"
 				>Yes, delete it</button
 			>
-			<button type="button" onclick={() => (confirmingDelete = false)} class="btn-quiet"
-				>Keep it</button
+			<button
+				id="keep-card"
+				type="button"
+				onclick={() => {
+					confirmingDelete = false;
+					focusById('delete-card');
+				}}
+				class="btn-quiet">Keep it</button
 			>
 		</form>
 	{:else}
 		<button
+			id="delete-card"
 			type="button"
-			onclick={() => (confirmingDelete = true)}
+			onclick={() => {
+				confirmingDelete = true;
+				focusById('keep-card');
+			}}
 			class="btn-danger ml-auto text-sm">Delete card</button
 		>
 	{/if}

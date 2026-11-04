@@ -136,6 +136,19 @@ test('proposed subtasks can be edited before saving', async ({ page }) => {
 	expect(saved?.subtasks).toEqual(['Buy treated wood']);
 });
 
+test('a sort with no pile asks you to pick one', async ({ page }) => {
+	await page.route('**/api/parse', (route) =>
+		route.fulfill({
+			json: { title: 'Build the shed', pile: null, notes: null, subtasks: [], source: 'claude' }
+		})
+	);
+	await page.getByLabel('Catch a thought').fill('Build the shed');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview).toContainText('Pick a pile for this one, then save.');
+	await expect(preview).not.toContainText('belongs on');
+});
+
 test('the capture box and notes stop at 1000 characters', async ({ page }) => {
 	const box = page.getByLabel('Catch a thought');
 	await box.fill('x'.repeat(1200));
@@ -180,4 +193,26 @@ test.describe('daily allowance', () => {
 		await expect(preview.getByRole('button', { name: 'Save' })).toBeEnabled();
 		await expect(preview.getByText(/used today's 20 Claude sorts/)).toHaveCount(0);
 	});
+});
+
+test('a long unbroken title wraps instead of widening the page on a phone', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await capture(page, 'Supercalifragilisticexpialidociousantidisestablishmentarianism', 'house');
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBe(0);
+});
+
+test('with 200% text on a phone, the capture box keeps its width and nothing scrolls sideways', async ({
+	page
+}) => {
+	await page.setViewportSize({ width: 320, height: 800 });
+	await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+	const box = await page.getByLabel('Catch a thought').boundingBox();
+	expect(box?.width).toBeGreaterThan(100);
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBe(0);
 });

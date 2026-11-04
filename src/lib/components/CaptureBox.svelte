@@ -170,43 +170,48 @@
 </script>
 
 {#if phase === 'input' || phase === 'parsing'}
-	<form
-		onsubmit={parse}
-		class="flex items-start gap-3 rounded-field bg-white p-3 pl-5 shadow-float"
-	>
-		<svg
-			class="mt-3 size-6 shrink-0 text-leaf"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="1.8"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			aria-hidden="true"
+	<!-- With large text the row runs out of room; below 17rem Catch drops to its own line so
+	     the text area keeps the width. -->
+	<div class="@container">
+		<form
+			onsubmit={parse}
+			class="flex flex-wrap items-start gap-3 rounded-field bg-white p-3 pl-5 shadow-float focus-within:ring-2 focus-within:ring-leaf"
 		>
-			<circle cx="9.5" cy="9.5" r="6.5" />
-			<path d="M14.5 14.5 21 21" />
-			<path d="M5 9.5h9M9.5 5v9" />
-		</svg>
-		<label for="capture-text" class="sr-only">Catch a thought</label>
-		<textarea
-			id="capture-text"
-			bind:this={textInput}
-			bind:value={text}
-			oninput={() => (caught = false)}
-			onkeydown={submitOnEnter}
-			rows="2"
-			maxlength={MAX_CAPTURE_LENGTH}
-			placeholder="What's fluttering around?"
-			disabled={phase === 'parsing'}
-			class="min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-2 text-lg font-semibold placeholder:font-medium placeholder:text-muted focus:ring-0"
-		></textarea>
-		<button
-			type="submit"
-			disabled={phase === 'parsing' || !text.trim()}
-			class="btn-primary shrink-0 self-center">{phase === 'parsing' ? 'Sorting…' : 'Catch'}</button
-		>
-	</form>
+			<svg
+				class="mt-3 size-6 shrink-0 text-leaf"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.8"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				aria-hidden="true"
+			>
+				<circle cx="9.5" cy="9.5" r="6.5" />
+				<path d="M14.5 14.5 21 21" />
+				<path d="M5 9.5h9M9.5 5v9" />
+			</svg>
+			<label for="capture-text" class="sr-only">Catch a thought</label>
+			<textarea
+				id="capture-text"
+				bind:this={textInput}
+				bind:value={text}
+				oninput={() => (caught = false)}
+				onkeydown={submitOnEnter}
+				rows="2"
+				maxlength={MAX_CAPTURE_LENGTH}
+				placeholder="What's fluttering around?"
+				disabled={phase === 'parsing'}
+				class="[field-sizing:content] min-h-[calc(2lh+1rem)] min-w-0 flex-1 resize-none border-0 bg-transparent px-0 py-2 text-lg font-semibold placeholder:font-medium placeholder:text-muted focus:ring-0 @max-[17rem]:basis-[calc(100%-2.25rem)]"
+			></textarea>
+			<button
+				type="submit"
+				disabled={phase === 'parsing' || !text.trim()}
+				class="btn-primary shrink-0 self-center @max-[17rem]:ml-auto"
+				>{phase === 'parsing' ? 'Sorting…' : 'Catch'}</button
+			>
+		</form>
+	</div>
 	<p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 pl-5 text-sm font-bold text-muted">
 		<span>Press Enter to catch</span>
 		{#if caught}<span role="status" class="text-leaf">Caught ✓ It landed on {lastPile}.</span>{/if}
@@ -223,6 +228,8 @@
 			<Butterfly class="mt-0.5 size-4.5 shrink-0" />
 			{#if notice}
 				<span role="status" class="text-amber-900">{notice}</span>
+			{:else if !chosenName}
+				<span>Pick a pile for this one, then save.</span>
 			{:else}
 				<span
 					>Claude thinks this belongs on <strong class="font-extrabold text-ink"
@@ -239,7 +246,7 @@
 				bind:value={title}
 				required
 				maxlength={MAX_TITLE_LENGTH}
-				class="w-full border-0 bg-transparent p-0 text-xl leading-snug font-extrabold focus:ring-0"
+				class="w-full rounded-md border-0 bg-transparent p-0 text-xl leading-snug font-extrabold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
 			/>
 			<label for="preview-notes" class="sr-only">Notes</label>
 			<textarea
@@ -248,7 +255,7 @@
 				rows="2"
 				maxlength={MAX_NOTES_LENGTH}
 				placeholder="Notes"
-				class="w-full resize-none border-0 bg-transparent p-0 font-semibold text-ink-soft placeholder:font-medium placeholder:text-muted focus:ring-0"
+				class="w-full resize-none rounded-md border-0 bg-transparent p-0 font-semibold text-ink-soft placeholder:font-medium placeholder:text-muted focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
 			></textarea>
 			{#if subtasks.length > 0}
 				<ul class="space-y-1 border-t border-line pt-2">
@@ -260,14 +267,23 @@
 								bind:value={subtasks[i]}
 								maxlength={MAX_TITLE_LENGTH}
 								aria-label={`Subtask ${i + 1}`}
-								class="flex-1 border-0 bg-transparent p-0 text-sm font-semibold focus:ring-0"
+								class="flex-1 rounded-md border-0 bg-transparent p-0 text-sm font-semibold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
 							/>
 							<button
 								type="button"
-								class="flex size-9 items-center justify-center rounded-full text-muted hover:bg-line hover:text-red-700"
+								class="flex size-11 shrink-0 items-center justify-center rounded-full text-muted hover:bg-line hover:text-red-700"
 								aria-label={`Remove subtask ${i + 1}`}
-								onclick={() => subtasks.splice(i, 1)}>✕</button
+								onclick={() => subtasks.splice(i, 1)}
 							>
+								<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+									><path
+										d="M7 7l10 10M17 7L7 17"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+									/></svg
+								>
+							</button>
 						</li>
 					{/each}
 				</ul>

@@ -1,12 +1,25 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
 
 	let copied = $state<string | null>(null);
+	// A link the browser wouldn't copy for us (no clipboard permission), shown selected instead.
+	let manual = $state<string | null>(null);
 
 	async function copy(link: string) {
-		await navigator.clipboard.writeText(link);
+		try {
+			await navigator.clipboard.writeText(link);
+		} catch {
+			manual = link;
+			await tick();
+			const field = document.getElementById('manual-invite') as HTMLInputElement | null;
+			field?.focus();
+			field?.select();
+			return;
+		}
+		manual = null;
 		copied = link;
 		setTimeout(() => (copied = copied === link ? null : copied), 2000);
 	}
@@ -35,11 +48,25 @@
 			id="new-invite"
 			readonly
 			value={created}
-			class="min-w-0 flex-1 border-0 bg-transparent p-0 font-semibold focus:ring-0"
+			class="min-w-0 flex-1 rounded-md border-0 bg-transparent p-0 font-semibold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
 		/>
-		<button type="button" class="btn-secondary shrink-0" onclick={() => copy(created)}
+		<button type="button" class="btn-soft shrink-0" onclick={() => copy(created)}
 			>{copied === created ? 'Copied' : 'Copy'}</button
 		>
+	</div>
+{/if}
+
+{#if manual}
+	<div class="chip mt-4 max-w-2xl px-4 py-3">
+		<label for="manual-invite" class="block text-sm font-bold text-ink-soft">
+			Couldn't copy it for you. The link is selected: press ⌘C or Ctrl+C.
+		</label>
+		<input
+			id="manual-invite"
+			readonly
+			value={manual}
+			class="mt-1 w-full rounded-md border-0 bg-transparent p-0 font-semibold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
+		/>
 	</div>
 {/if}
 
@@ -51,8 +78,10 @@
 		<ul class="mt-2 space-y-2">
 			{#each data.unused as invite (invite.id)}
 				<li class="chip flex flex-wrap items-center gap-2 py-2 pr-2 pl-4">
-					<span class="min-w-0 flex-1 truncate font-mono text-sm">{invite.code}</span>
-					<span class="text-sm font-bold text-muted">expires {day(invite.expires_at)}</span>
+					<span class="min-w-40 flex-1 truncate font-mono text-sm">{invite.code}</span>
+					<span class="text-sm font-bold whitespace-nowrap text-muted"
+						>expires {day(invite.expires_at)}</span
+					>
 					<button type="button" class="btn-quiet" onclick={() => copy(linkFor(invite.code))}
 						>{copied === linkFor(invite.code) ? 'Copied' : 'Copy'}</button
 					>
@@ -74,8 +103,12 @@
 		<ul class="mt-2 space-y-2">
 			{#each data.used as invite (invite.id)}
 				<li class="chip flex items-center justify-between gap-2 px-4 py-2">
-					<span class="font-bold">{invite.email ?? 'Unknown account'}</span>
-					<span class="text-sm font-bold text-muted">joined {day(invite.used_at)}</span>
+					<span class="min-w-0 font-bold [overflow-wrap:anywhere]"
+						>{invite.email ?? 'Unknown account'}</span
+					>
+					<span class="shrink-0 text-sm font-bold whitespace-nowrap text-muted"
+						>joined {day(invite.used_at)}</span
+					>
 				</li>
 			{/each}
 		</ul>

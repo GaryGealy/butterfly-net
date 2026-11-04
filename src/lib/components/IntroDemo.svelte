@@ -36,7 +36,7 @@
 
 	const scene = $derived(SCENES[play.scene]);
 	const frame = $derived(still ? stillFrame(scene.id) : frameAt(scene.id, play.elapsed));
-	const caption = $derived(play.ended && !still ? END_CAPTION : scene.caption);
+	const ended = $derived(play.ended && !still);
 
 	const PAPER: Record<Paper, string> = {
 		fresh: 'bg-white',
@@ -144,9 +144,8 @@
 							<p class="flex items-start gap-2 text-sm font-bold text-ink-soft">
 								<Butterfly class="mt-0.5 size-4.5 shrink-0" />
 								<span
-									>Claude thinks this belongs on <strong class="font-extrabold text-ink"
-										>house</strong
-									>. Edit anything, then save.</span
+									>AI thinks this belongs on <strong class="font-extrabold text-ink">house</strong>.
+									Edit anything, then save.</span
 								>
 							</p>
 							<div class="chip space-y-1 px-5 py-4">
@@ -251,9 +250,34 @@
 </div>
 
 {#if started}
-	<p aria-live="polite" data-caption class="mt-4 min-h-[3lh] text-center font-bold text-ink-soft">
-		{caption}
-	</p>
+	<!-- Each part names itself (Headline) over its sentence, and rises in as the scene changes.
+	     Invisible copies of every caption share the cell, so it is always as tall as the longest
+	     one at this width and text size, and the controls below never jump. -->
+	{#snippet captionText(title: string | null, text: string)}
+		{#if title}
+			<p class="text-xl font-extrabold text-ink">{title}</p>
+			<p class="mt-1 text-lg leading-snug font-semibold text-balance text-ink-soft">{text}</p>
+		{:else}
+			<p class="text-xl font-extrabold text-balance text-ink">{text}</p>
+		{/if}
+	{/snippet}
+	<div class="mt-5 grid text-center">
+		{#each SCENES as s (s.id)}
+			<div aria-hidden="true" class="invisible [grid-area:1/1]">
+				{@render captionText(s.title, s.caption)}
+			</div>
+		{/each}
+		<div aria-hidden="true" class="invisible [grid-area:1/1]">
+			{@render captionText(null, END_CAPTION)}
+		</div>
+		<div aria-live="polite" data-caption class="[grid-area:1/1]">
+			{#key ended ? 'end' : scene.id}
+				<div in:fly={{ y: still ? 0 : 6, duration: still ? 0 : 250, easing: cubicOut }}>
+					{@render captionText(ended ? null : scene.title, ended ? END_CAPTION : scene.caption)}
+				</div>
+			{/key}
+		</div>
+	</div>
 	<ol class="sr-only">
 		{#each SCENES as s (s.id)}<li>{s.title}: {s.caption}</li>{/each}
 		<li>{END_CAPTION}</li>

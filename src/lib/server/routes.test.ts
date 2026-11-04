@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { isPublicPath, requireUser, safeNext } from './routes';
 
 describe('isPublicPath', () => {
-	it('allows only the auth pages and PWA assets without a session', () => {
+	it('allows only the auth pages, the invite intro and PWA assets without a session', () => {
 		expect(isPublicPath('/login')).toBe(true);
 		expect(isPublicPath('/signup')).toBe(true);
+		expect(isPublicPath('/welcome')).toBe(true);
 		expect(isPublicPath('/manifest.webmanifest')).toBe(true);
 		expect(isPublicPath('/icons/icon-192.png')).toBe(true);
 		expect(isPublicPath('/')).toBe(false);

@@ -294,6 +294,18 @@ amber-900 notice. Then a white chip holding the editable title (Headline type), 
 subtasks (hollow circles, ✕ to remove). Below that, a pill-shaped pile select and Save
 and Cancel. Escape cancels.
 
+### Intro Demo
+
+Invite links open `/welcome`, a skippable ~35 s re-creation of the app built from its own
+classes with sample data: **Catch a thought** (the thought types itself into the capture box,
+Catch reads "Sorting…"), **Claude sorts it** (the sage preview proposes **house**, Save presses)
+and **Piles and ageing** (the butterfly drifts across once, the card lands on house and yellows
+through cream to yellow with a "4mo" label). The picture is drawn at 30×19.5rem and scaled to
+its box, so a phone sees all of it; captions and controls sit outside it and grow with text.
+A three-segment progress bar jumps between scenes; one button pauses, plays and, at the end,
+reads "Watch again". The demo pauses while the tab is hidden. Under reduced motion nothing
+plays: each scene shows settled and the segments switch between them.
+
 ### Pile Patches
 
 A pastel rounded block (1.5rem corners, 1rem padding, no shadow). It has the pile name in

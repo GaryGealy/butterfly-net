@@ -1,7 +1,13 @@
 import { error } from '@sveltejs/kit';
 import type { SessionUser } from './auth';
 
-const PUBLIC_PATHS = new Set(['/login', '/signup', '/manifest.webmanifest', '/service-worker.js']);
+const PUBLIC_PATHS = new Set([
+	'/login',
+	'/signup',
+	'/welcome',
+	'/manifest.webmanifest',
+	'/service-worker.js'
+]);
 
 export function isPublicPath(pathname: string): boolean {
 	return PUBLIC_PATHS.has(pathname) || /^\/icons\/[\w.-]+$/.test(pathname);

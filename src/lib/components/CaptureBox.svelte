@@ -8,6 +8,7 @@
 	import type { ParseResult, PileRef } from '../types.ts';
 	import { NEW_PILE_COLOR, NO_PILE_COLOR, pileColor } from '../pile-color';
 	import Butterfly from './Butterfly.svelte';
+	import NetIcon from './NetIcon.svelte';
 
 	interface Props {
 		piles: PileRef[];
@@ -177,20 +178,7 @@
 			onsubmit={parse}
 			class="flex flex-wrap items-start gap-3 rounded-field bg-white p-3 pl-5 shadow-float focus-within:ring-2 focus-within:ring-leaf"
 		>
-			<svg
-				class="mt-3 size-6 shrink-0 text-leaf"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.8"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				aria-hidden="true"
-			>
-				<circle cx="9.5" cy="9.5" r="6.5" />
-				<path d="M14.5 14.5 21 21" />
-				<path d="M5 9.5h9M9.5 5v9" />
-			</svg>
+			<NetIcon class="mt-3 size-6 shrink-0 text-leaf" />
 			<label for="capture-text" class="sr-only">Catch a thought</label>
 			<textarea
 				id="capture-text"

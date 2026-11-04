@@ -19,7 +19,7 @@ export const actions: Actions = {
 	create: async ({ locals, url }) => {
 		const admin = requireAdmin(locals);
 		const { code } = await createInvite(locals.db, admin.id);
-		return { created: `${url.origin}/signup?invite=${code}` };
+		return { created: `${url.origin}/welcome?invite=${code}` };
 	},
 	revoke: async ({ locals, request }) => {
 		requireAdmin(locals);

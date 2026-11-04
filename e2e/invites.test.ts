@@ -7,12 +7,14 @@ test('the admin creates an invite link and someone joins with it', async ({ page
 	await waitForHydration(page);
 	await page.getByRole('button', { name: 'Create invite link' }).click();
 	const link = page.getByLabel('New invite link');
-	await expect(link).toHaveValue(/\/signup\?invite=[A-Za-z0-9_-]{22}$/);
+	await expect(link).toHaveValue(/\/welcome\?invite=[A-Za-z0-9_-]{22}$/);
 	const url = new URL(await link.inputValue());
 	await logOut(page);
 
 	const joiner = `joiner-${Date.now()}@test.dev`;
 	await gotoReady(page, url.pathname + url.search);
+	await page.getByRole('link', { name: 'Create my account' }).click();
+	await waitForHydration(page);
 	await page.getByLabel('Email').fill(joiner);
 	await page.getByLabel('Password').fill(PASSWORD);
 	await page.getByRole('button', { name: 'Create account' }).click();

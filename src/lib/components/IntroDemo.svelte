@@ -89,13 +89,13 @@
 <div
 	bind:clientWidth={boxWidth}
 	aria-hidden="true"
-	class="relative aspect-[14/9] w-full overflow-hidden rounded-field bg-ground ring-1 ring-line"
+	class="relative aspect-[20/13] w-full overflow-hidden rounded-field bg-ground ring-1 ring-line"
 >
 	<div
 		bind:offsetWidth={stageWidth}
 		style:transform={`scale(${scale})`}
 		style:visibility={boxWidth ? 'visible' : 'hidden'}
-		class="absolute top-0 left-0 h-[22.5rem] w-[35rem] origin-top-left p-6"
+		class="absolute top-0 left-0 h-[19.5rem] w-[30rem] origin-top-left p-5"
 	>
 		{#key scene.id}
 			<div class="h-full" in:fade={{ duration: still ? 0 : 300 }}>
@@ -120,7 +120,7 @@
 						</div>
 					</div>
 				{:else if frame.scene === 'sort'}
-					<div class="space-y-4 rounded-field bg-pile-sage p-5">
+					<div class="space-y-3 rounded-field bg-pile-sage p-5">
 						<p class="flex items-start gap-2 text-sm font-bold text-ink-soft">
 							<Butterfly class="mt-0.5 size-4.5 shrink-0" />
 							<span
@@ -148,10 +148,8 @@
 									/>
 								</svg>
 							</span>
-						</div>
-						<div class="flex items-center gap-3">
 							<span
-								class="btn-primary transition-transform duration-150 {frame.saving
+								class="btn-primary ml-auto transition-transform duration-150 {frame.saving
 									? 'scale-95 bg-leaf-dark'
 									: ''}">Save</span
 							>
@@ -159,7 +157,7 @@
 						</div>
 					</div>
 				{:else}
-					<div class="relative grid h-full grid-cols-3 gap-4">
+					<div class="relative grid h-full grid-cols-[1.4fr_1fr_1fr] gap-3">
 						{#each PILES as pile, i (pile.name)}
 							<div class="flex flex-col gap-2 rounded-patch p-3 {pile.color}">
 								<p class="flex items-center justify-between gap-2 px-1 font-extrabold text-ink">
@@ -263,14 +261,14 @@
 	/* The one decorative moment: the butterfly drifts across into the piles. Ease-out, no bounce. */
 	@keyframes intro-flight {
 		from {
-			transform: translate(-2rem, 12rem) rotate(-8deg);
+			transform: translate(-2rem, 10rem) rotate(-8deg);
 			opacity: 0;
 		}
 		20% {
 			opacity: 1;
 		}
 		to {
-			transform: translate(32rem, -1rem) rotate(6deg);
+			transform: translate(27rem, -1rem) rotate(6deg);
 			opacity: 0;
 		}
 	}

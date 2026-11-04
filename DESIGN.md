@@ -289,7 +289,7 @@ text keeps the width. The header and every page reflow without sideways scrollin
 
 Takes the place of the capture box once Claude replies. Its background is the target
 pile's pastel and eases over 300ms when the pile changes. At the top, a butterfly and a
-sentence ("Claude thinks this belongs on **house**. Edit anything, then save.") or an
+sentence ("AI thinks this belongs on **house**. Edit anything, then save.") or an
 amber-900 notice. Then a white chip holding the editable title (Headline type), notes and
 subtasks (hollow circles, ✕ to remove). Below that, a pill-shaped pile select and Save
 and Cancel. Escape cancels.
@@ -298,7 +298,7 @@ and Cancel. Escape cancels.
 
 Invite links open `/welcome`, a skippable ~35 s re-creation of the app built from its own
 classes with sample data: **Catch a thought** (the thought types itself into the capture box,
-Catch reads "Sorting…"), **Claude sorts it** (the sage preview proposes **house**, Save presses)
+Catch reads "Sorting…"), **AI sorts it** (the sage preview proposes **house**, Save presses)
 and **Piles and ageing** (the butterfly drifts across once, the card lands on house and yellows
 through cream to yellow with a "4mo" label). The picture is drawn at 30×19.5rem and scaled to
 its box, so a phone sees all of it; captions and controls sit outside it and grow with text.
@@ -312,6 +312,11 @@ card: "New to Butterfly Net?", "A 35-second look at how it works.", a primary **
 reduced motion), starts playback and moves focus to Pause (or Scene 1 under reduced motion).
 Captions and controls appear only once it starts. Card and picture share one grid cell, so with
 large text the card grows the cell rather than being clipped; below 22rem its padding tightens.
+The demo says "AI", never "Claude", like the rest of the interface.
+Under the picture each part names itself: the scene title in Headline (800, 1.25rem, Bark)
+over its sentence at 600, 1.125rem in Soft Bark, rising 6px into place over 250ms (instant
+under reduced motion). Invisible copies of every caption share the cell, so the controls below
+hold still at any width or text size.
 
 ### Pile Patches
 

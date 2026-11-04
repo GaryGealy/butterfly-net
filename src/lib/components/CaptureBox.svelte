@@ -83,7 +83,7 @@
 					: '';
 		notice =
 			result.source === 'limit'
-				? `You've used today's ${DAILY_PARSE_LIMIT} Claude sorts. Pick a pile yourself; sorting is back tomorrow.`
+				? `You've used today's ${DAILY_PARSE_LIMIT} AI sorts. Pick a pile yourself; sorting is back tomorrow.`
 				: result.source === 'fallback'
 					? "Couldn't sort this one automatically — pick a pile."
 					: null;
@@ -220,9 +220,8 @@
 				<span>Pick a pile for this one, then save.</span>
 			{:else}
 				<span
-					>Claude thinks this belongs on <strong class="font-extrabold text-ink"
-						>{chosenName}</strong
-					>. Edit anything, then save.</span
+					>AI thinks this belongs on <strong class="font-extrabold text-ink">{chosenName}</strong>.
+					Edit anything, then save.</span
 				>
 			{/if}
 		</p>

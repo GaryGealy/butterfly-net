@@ -70,8 +70,9 @@ to-do without making anything up.
 - **Name and metaphor:** Butterfly Net. "Thoughts are like butterflies: if you don't catch
   them, they flutter away." The index card (3×5) is the core object.
 - **Voice:** plain and warm. Lead with the feeling ("catch the thought before it's
-  gone"), then the speed ("one hotkey, one keypress"). Always "Claude sorts it, you
-  confirm"; never suggest it saves or acts on its own.
+  gone"), then the speed ("one hotkey, one keypress"). Always "AI sorts it, you
+  confirm"; never suggest it saves or acts on its own. On screen it is "AI", never "Claude":
+  Claude is the service behind it, not a name the user needs.
 - **Tagline candidates:** "Catch every thought." · "Say it. It's sorted." · "Your index
   cards, sorted for you."
 - An incumbent visual system ("Meadow") ships in the code; it is the design authority

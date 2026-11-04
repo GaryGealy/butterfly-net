@@ -113,7 +113,7 @@ describe('frameAt', () => {
 			sorting: false
 		});
 		expect(frameAt('catch', 6_499)).toEqual({ scene: 'catch', typed: THOUGHT, sorting: false });
-		expect(frameAt('catch', 6_500).sorting).toBe(true);
+		expect(frameAt('catch', 6_500)).toMatchObject({ sorting: true });
 	});
 
 	it('presses Save late in the sort scene', () => {

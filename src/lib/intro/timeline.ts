@@ -138,7 +138,9 @@ export function stillFrame(id: SceneId): Frame {
 			return frameAt('catch', SORTING_AT - 1);
 		case 'sort':
 			return frameAt('sort', SAVE_AT - 1);
-		case 'piles':
-			return { ...frameAt('piles', YELLOW_AT), lapse: null };
+		case 'piles': {
+			const settled = frameAt('piles', YELLOW_AT);
+			return settled.scene === 'piles' ? { ...settled, lapse: null } : settled;
+		}
 	}
 }

@@ -15,19 +15,19 @@ export const SCENES: readonly Scene[] = [
 		id: 'catch',
 		title: 'Catch a thought',
 		caption: 'A thought pops up? Catch it before it flutters off, from your Mac or your phone.',
-		duration: 10_000
+		duration: 5_000
 	},
 	{
 		id: 'sort',
 		title: 'AI sorts it',
 		caption: 'AI suggests a pile. Change anything you like, then save.',
-		duration: 12_000
+		duration: 7_000
 	},
 	{
 		id: 'piles',
 		title: 'Piles and ageing',
 		caption: 'Cards wait on their piles. Leave one too long and it yellows like old paper.',
-		duration: 13_000
+		duration: 8_000
 	}
 ];
 
@@ -94,13 +94,13 @@ export type Frame =
 			age: string | null;
 	  };
 
-const TYPE_START = 800;
-const TYPE_STEP = 55;
-const SORTING_AT = 6_500;
-const SAVE_AT = 9_000;
-const LAND_AT = 2_000;
-const CREAM_AT = 5_000;
-const YELLOW_AT = 8_000;
+const TYPE_START = 400;
+const TYPE_STEP = 45;
+const SORTING_AT = 3_500;
+const SAVE_AT = 5_500;
+const LAND_AT = 1_500;
+const CREAM_AT = 3_000;
+const YELLOW_AT = 4_500;
 
 /** What scene `id` shows `elapsed` milliseconds in. */
 export function frameAt(id: SceneId, elapsed: number): Frame {

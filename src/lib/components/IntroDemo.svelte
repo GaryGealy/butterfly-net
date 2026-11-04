@@ -234,7 +234,7 @@
 				class="w-full max-w-xs min-w-0 rounded-field bg-white p-5 text-center shadow-float @max-[22rem]:px-3"
 			>
 				<h2 id="intro-choice" class="text-lg font-extrabold text-ink">New to Butterfly Net?</h2>
-				<p class="mt-1 font-bold text-ink-soft">A 35-second look at how it works.</p>
+				<p class="mt-1 font-bold text-ink-soft">A 20-second look at how it works.</p>
 				<button type="button" onclick={start} class="btn-primary mt-4 w-full gap-2">
 					<svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 						<path
@@ -352,6 +352,6 @@
 		}
 	}
 	.intro-flight {
-		animation: intro-flight 2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		animation: intro-flight 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 	}
 </style>

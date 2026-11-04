@@ -296,7 +296,7 @@ and Cancel. Escape cancels.
 
 ### Intro Demo
 
-Invite links open `/welcome`, a skippable ~35 s re-creation of the app built from its own
+Invite links open `/welcome`, a skippable ~20 s re-creation (scenes of 5, 7 and 8 s) of the app built from its own
 classes with sample data: **Catch a thought** (the thought types itself into the capture box,
 Catch reads "Sorting…"), **AI sorts it** (the sage preview proposes **house**, Save presses)
 and **Piles and ageing** (the butterfly drifts across once, the card lands on house and yellows
@@ -307,7 +307,7 @@ reads "Watch again". The demo pauses while the tab is hidden. Under reduced moti
 plays: each scene shows settled and the segments switch between them.
 
 Nothing plays on arrival. The demo waits on its first frame under a Ground wash with a white
-card: "New to Butterfly Net?", "A 35-second look at how it works.", a primary **Watch the demo**
+card: "New to Butterfly Net?", "A 20-second look at how it works.", a primary **Watch the demo**
 (play glyph) and a quiet **Go straight to sign-up** link. Watch fades the card (200ms, none under
 reduced motion), starts playback and moves focus to Pause (or Scene 1 under reduced motion).
 Captions and controls appear only once it starts. Card and picture share one grid cell, so with

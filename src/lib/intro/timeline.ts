@@ -15,19 +15,19 @@ export const SCENES: readonly Scene[] = [
 		id: 'catch',
 		title: 'Catch a thought',
 		caption: 'A thought pops up? Catch it before it flutters off, from your Mac or your phone.',
-		duration: 5_000
+		duration: 3_500
 	},
 	{
 		id: 'sort',
 		title: 'AI sorts it',
 		caption: 'AI suggests a pile. Change anything you like, then save.',
-		duration: 7_000
+		duration: 4_900
 	},
 	{
 		id: 'piles',
 		title: 'Piles and ageing',
 		caption: 'Cards wait on their piles. Leave one too long and it yellows like old paper.',
-		duration: 8_000
+		duration: 5_600
 	}
 ];
 
@@ -47,30 +47,30 @@ export interface PlayState {
 
 export const START: PlayState = { scene: 0, elapsed: 0, playing: true, ended: false };
 
+/** Plays the current scene on; at its end the demo waits for Next, or ends after the last. */
 export function advance(state: PlayState, ms: number, scenes = SCENES): PlayState {
 	if (!state.playing || state.ended || ms <= 0) return state;
-	let { scene, elapsed } = state;
-	elapsed += ms;
-	while (elapsed >= scenes[scene].duration) {
-		if (scene === scenes.length - 1) {
-			return { scene, elapsed: scenes[scene].duration, playing: false, ended: true };
-		}
-		elapsed -= scenes[scene].duration;
-		scene += 1;
-	}
-	return { ...state, scene, elapsed };
+	const { duration } = scenes[state.scene];
+	const elapsed = state.elapsed + ms;
+	if (elapsed < duration) return { ...state, elapsed };
+	return { ...state, elapsed: duration, playing: false, ended: state.scene === scenes.length - 1 };
 }
 
-/** Jumps to the start of a scene. Picking a scene after the end plays from there. */
-export function seek(state: PlayState, index: number, scenes = SCENES): PlayState {
+/** True when a scene has played through and the demo is waiting for Next. */
+export function waiting(state: PlayState, scenes = SCENES): boolean {
+	return !state.ended && state.elapsed >= scenes[state.scene].duration;
+}
+
+/** Plays the following scene from its start; after the end, starts again from scene 1. */
+export function next(state: PlayState, scenes = SCENES): PlayState {
+	if (state.ended || state.scene === scenes.length - 1) return START;
+	return { scene: state.scene + 1, elapsed: 0, playing: true, ended: false };
+}
+
+/** Plays a picked scene from its start. */
+export function seek(index: number, scenes = SCENES): PlayState {
 	const scene = Math.min(Math.max(index, 0), scenes.length - 1);
-	return { scene, elapsed: 0, playing: state.playing || state.ended, ended: false };
-}
-
-/** Pause or resume; after the end, start again from scene 1. */
-export function togglePlay(state: PlayState): PlayState {
-	if (state.ended) return START;
-	return { ...state, playing: !state.playing };
+	return { scene, elapsed: 0, playing: true, ended: false };
 }
 
 /** How full scene `index`'s progress segment is, from 0 to 1. */
@@ -94,13 +94,13 @@ export type Frame =
 			age: string | null;
 	  };
 
-const TYPE_START = 400;
-const TYPE_STEP = 45;
-const SORTING_AT = 3_500;
-const SAVE_AT = 5_500;
-const LAND_AT = 1_500;
-const CREAM_AT = 3_000;
-const YELLOW_AT = 4_500;
+const TYPE_START = 280;
+const TYPE_STEP = 32;
+const SORTING_AT = 2_450;
+const SAVE_AT = 3_850;
+const LAND_AT = 1_050;
+const CREAM_AT = 2_100;
+const YELLOW_AT = 3_150;
 
 /** What scene `id` shows `elapsed` milliseconds in. */
 export function frameAt(id: SceneId, elapsed: number): Frame {

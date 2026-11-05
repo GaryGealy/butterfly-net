@@ -12,10 +12,11 @@
 		TIDY_TITLE,
 		advance,
 		frameAt,
+		next,
 		seek,
 		segmentFill,
 		stillFrame,
-		togglePlay,
+		waiting,
 		type Paper,
 		type PlayState
 	} from '#lib/intro/timeline.ts';
@@ -26,17 +27,20 @@
 	// Under reduced motion nothing plays: each scene shows settled and the segments switch them.
 	const still = $derived(prefersReducedMotion.current);
 
-	// Nothing plays until the visitor chooses to watch; until then a card asks.
+	// Nothing plays until the visitor chooses to watch; until then a card asks. After that each
+	// scene plays once and waits on its last frame until the visitor taps Next.
 	let started = $state(false);
 	let play = $state.raw<PlayState>({ ...START, playing: false });
-	let toggleButton = $state<HTMLButtonElement>();
-	let firstSegment = $state<HTMLButtonElement>();
+	let nextButton = $state<HTMLButtonElement>();
 	// Set when the demo paused itself because the tab was hidden, so it resumes on return.
 	let pausedByHiding = false;
 
 	const scene = $derived(SCENES[play.scene]);
 	const frame = $derived(still ? stillFrame(scene.id) : frameAt(scene.id, play.elapsed));
 	const ended = $derived(play.ended && !still);
+	// Next stands out once the scene has nothing left to show.
+	const rested = $derived(still || waiting(play));
+	const restart = $derived(play.ended || (still && play.scene === SCENES.length - 1));
 
 	const PAPER: Record<Paper, string> = {
 		fresh: 'bg-white',
@@ -79,22 +83,18 @@
 		};
 	});
 
+	// Under reduced motion a scene is shown settled, so nothing is set playing.
+	function show(state: PlayState) {
+		pausedByHiding = false;
+		play = still ? { ...state, playing: false } : state;
+	}
+
 	async function start() {
 		started = true;
-		play = { ...START, playing: !still };
+		show(START);
 		await tick();
-		// The card goes away, so keyboard focus moves to the controls that replace it.
-		(still ? firstSegment : toggleButton)?.focus();
-	}
-
-	function toggle() {
-		pausedByHiding = false;
-		play = togglePlay(play);
-	}
-
-	function jump(index: number) {
-		pausedByHiding = false;
-		play = seek(still ? { ...play, playing: false } : play, index);
+		// The card goes away, so keyboard focus moves to the control that replaces it.
+		nextButton?.focus();
 	}
 
 	const fillOf = (index: number) =>
@@ -234,7 +234,7 @@
 				class="w-full max-w-xs min-w-0 rounded-field bg-white p-5 text-center shadow-float @max-[22rem]:px-3"
 			>
 				<h2 id="intro-choice" class="text-lg font-extrabold text-ink">New to Butterfly Net?</h2>
-				<p class="mt-1 font-bold text-ink-soft">A 20-second look at how it works.</p>
+				<p class="mt-1 font-bold text-ink-soft">A 14-second look at how it works.</p>
 				<button type="button" onclick={start} class="btn-primary mt-4 w-full gap-2">
 					<svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
 						<path
@@ -283,42 +283,13 @@
 		<li>{END_CAPTION}</li>
 	</ol>
 
-	<div class="mt-2 flex items-center gap-2">
-		{#if !still}
-			<button
-				bind:this={toggleButton}
-				type="button"
-				onclick={toggle}
-				aria-label={play.ended ? undefined : play.playing ? 'Pause' : 'Play'}
-				class="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full bg-white px-3 font-bold text-leaf shadow-chip transition hover:bg-leaf-tint"
-			>
-				{#if play.ended}
-					Watch again
-				{:else if play.playing}
-					<svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<rect x="6.5" y="5" width="4" height="14" rx="1.5" />
-						<rect x="13.5" y="5" width="4" height="14" rx="1.5" />
-					</svg>
-				{:else}
-					<svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<path
-							d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"
-						/>
-					</svg>
-				{/if}
-			</button>
-		{/if}
-		<div class="flex min-w-0 flex-1 gap-1.5">
+	<!-- With large text on a phone, Next drops below the progress segments instead of squeezing them. -->
+	<div class="mt-2 flex flex-wrap items-center justify-end gap-x-3">
+		<div class="flex min-w-32 flex-1 gap-1.5">
 			{#each SCENES as s, i (s.id)}
 				<button
-					bind:this={
-						() => (i === 0 ? firstSegment : undefined),
-						(el) => {
-							if (i === 0) firstSegment = el;
-						}
-					}
 					type="button"
-					onclick={() => jump(i)}
+					onclick={() => show(seek(i))}
 					aria-label={`Scene ${i + 1}: ${s.title}`}
 					aria-pressed={still ? i === play.scene : undefined}
 					class="flex min-h-11 min-w-0 flex-1 items-center rounded-full"
@@ -333,6 +304,27 @@
 				</button>
 			{/each}
 		</div>
+		<button
+			bind:this={nextButton}
+			type="button"
+			onclick={() => show(next(play))}
+			class="shrink-0 gap-1.5 whitespace-nowrap {rested ? 'btn-primary' : 'btn-soft text-leaf'}"
+		>
+			{#if restart}
+				Watch again
+			{:else}
+				Next
+				<svg class="size-5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+					<path
+						d="M5 12h13m-5-6 6 6-6 6"
+						stroke="currentColor"
+						stroke-width="2.25"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			{/if}
+		</button>
 	</div>
 {/if}
 
@@ -352,6 +344,6 @@
 		}
 	}
 	.intro-flight {
-		animation: intro-flight 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		animation: intro-flight 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 	}
 </style>

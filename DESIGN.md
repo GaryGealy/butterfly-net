@@ -296,20 +296,23 @@ and Cancel. Escape cancels.
 
 ### Intro Demo
 
-Invite links open `/welcome`, a skippable ~20 s re-creation (scenes of 5, 7 and 8 s) of the app built from its own
+Invite links open `/welcome`, a skippable ~14 s re-creation (scenes of 3.5, 4.9 and 5.6 s) of the app built from its own
 classes with sample data: **Catch a thought** (the thought types itself into the capture box,
 Catch reads "Sorting…"), **AI sorts it** (the sage preview proposes **house**, Save presses)
 and **Piles and ageing** (the butterfly drifts across once, the card lands on house and yellows
 through cream to yellow with a "4mo" label). The picture is drawn at 30×19.5rem and scaled to
 its box, so a phone sees all of it; captions and controls sit outside it and grow with text.
-A three-segment progress bar jumps between scenes; one button pauses, plays and, at the end,
-reads "Watch again". The demo pauses while the tab is hidden. Under reduced motion nothing
-plays: each scene shows settled and the segments switch between them.
+Each scene plays once and then waits on its last frame: the visitor moves on with **Next**
+(arrow glyph), a soft white pill while a scene plays that turns primary Leaf once it is waiting.
+Next also skips ahead mid-scene. After the last scene the end caption shows and the button reads
+"Watch again". A three-segment progress bar beside it replays or jumps to any scene; with large
+text on a phone, Next wraps below the bar. The demo pauses while the tab is hidden. Under reduced
+motion nothing plays: each scene shows settled, and Next and the segments switch between them.
 
 Nothing plays on arrival. The demo waits on its first frame under a Ground wash with a white
-card: "New to Butterfly Net?", "A 20-second look at how it works.", a primary **Watch the demo**
+card: "New to Butterfly Net?", "A 14-second look at how it works.", a primary **Watch the demo**
 (play glyph) and a quiet **Go straight to sign-up** link. Watch fades the card (200ms, none under
-reduced motion), starts playback and moves focus to Pause (or Scene 1 under reduced motion).
+reduced motion), starts playback and moves focus to Next.
 Captions and controls appear only once it starts. Card and picture share one grid cell, so with
 large text the card grows the cell rather than being clipped; below 22rem its padding tightens.
 The demo says "AI", never "Claude", like the rest of the interface.

@@ -5,6 +5,8 @@
 	import { MAX_EMAIL_LENGTH } from '#lib/limits.ts';
 
 	let { data, form } = $props();
+	// A refused invite drops back to the invite-only heading; the form stays for open-domain emails.
+	const hasInvite = $derived(!!data.invite && !(form && 'inviteRejected' in form));
 </script>
 
 <svelte:head><title>Create your account · Butterfly Net</title></svelte:head>
@@ -13,46 +15,46 @@
 	<span class="flex size-12 items-center justify-center rounded-full bg-leaf-tint">
 		<Butterfly class="size-7 text-leaf" />
 	</span>
-	{#if data.invite && !form?.inviteRejected}
+	{#if hasInvite}
 		<h1 class="mt-4 text-2xl font-extrabold">Create your account</h1>
 		<p class="mb-6 font-bold text-muted">Catch your thoughts before they flutter away.</p>
-		<form method="POST" use:enhance class="space-y-4">
-			<input type="hidden" name="invite" value={data.invite} />
-			<div>
-				<label for="email" class="block text-sm font-bold text-ink-soft">Email</label>
-				<input
-					id="email"
-					name="email"
-					type="email"
-					maxlength={MAX_EMAIL_LENGTH}
-					autocomplete="email"
-					required
-					value={form?.email}
-					class="field mt-1"
-				/>
-			</div>
-			<div>
-				<label for="password" class="block text-sm font-bold text-ink-soft">Password</label>
-				<input
-					id="password"
-					name="password"
-					type="password"
-					autocomplete="new-password"
-					minlength="8"
-					required
-					class="field mt-1"
-				/>
-			</div>
-			{#if form?.error}<p role="alert" class="text-sm font-bold text-red-700">{form.error}</p>{/if}
-			<button class="btn-primary w-full">Create account</button>
-		</form>
 	{:else}
 		<h1 class="mt-4 text-2xl font-extrabold">Invite only</h1>
-		<p class="mt-1 font-bold text-muted">
+		<p class="mt-1 mb-6 font-bold text-muted">
 			Butterfly Net is invite-only right now. Ask the person who told you about it for an invite
 			link.
 		</p>
 	{/if}
+	<form method="POST" use:enhance class="space-y-4">
+		{#if hasInvite}<input type="hidden" name="invite" value={data.invite} />{/if}
+		<div>
+			<label for="email" class="block text-sm font-bold text-ink-soft">Email</label>
+			<input
+				id="email"
+				name="email"
+				type="email"
+				maxlength={MAX_EMAIL_LENGTH}
+				autocomplete="email"
+				required
+				value={form?.email}
+				class="field mt-1"
+			/>
+		</div>
+		<div>
+			<label for="password" class="block text-sm font-bold text-ink-soft">Password</label>
+			<input
+				id="password"
+				name="password"
+				type="password"
+				autocomplete="new-password"
+				minlength="8"
+				required
+				class="field mt-1"
+			/>
+		</div>
+		{#if form?.error}<p role="alert" class="text-sm font-bold text-red-700">{form.error}</p>{/if}
+		<button class="btn-primary w-full">Create account</button>
+	</form>
 	<p class="mt-5 text-sm font-bold text-muted">
 		Already have an account? <a href={resolve('/login')} class="text-leaf underline">Log in</a>
 	</p>

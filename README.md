@@ -101,6 +101,11 @@ Sign-up is invite-only. Log in with an account listed in `ADMIN_EMAILS` (`wrangl
 `[vars]`), open **Invites** in the header, and choose **Create invite link**. Each link works
 once and expires after 14 days. Send it to the person; they create their account from it.
 
+People with an email at a domain in `SIGNUP_DOMAINS` (`wrangler.toml` `[vars]`, now
+`teamsparq.com`) sign up without an invite: at `/welcome` (the intro, then sign-up) or straight
+at `/signup`. The address isn't verified, and the page still reads invite-only, so tell them
+their company email works.
+
 Everyone except admins gets 20 Claude sorts a day (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
 resetting at midnight UTC). Past that, captures still work: the preview asks them to pick the
 pile. Keep a monthly spend limit on the Anthropic workspace as a backstop.

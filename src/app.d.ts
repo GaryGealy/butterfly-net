@@ -14,6 +14,8 @@ declare global {
 			ANTHROPIC_API_KEY?: string;
 			/** Comma-separated admin emails, from wrangler.toml [vars]. */
 			ADMIN_EMAILS?: string;
+			/** Comma-separated email domains that sign up without an invite, from wrangler.toml [vars]. */
+			SIGNUP_DOMAINS?: string;
 		}
 	}
 

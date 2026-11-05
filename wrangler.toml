@@ -9,6 +9,9 @@ workers_dev = true
 # Accounts that can open /invites and aren't limited to the daily Claude allowance.
 [vars]
 ADMIN_EMAILS = "gary.m.gealy@gmail.com"
+# Emails at these domains sign up without an invite (exact domain, unverified). The sign-up page
+# still says invite-only; whoever shares the link tells people their company email works.
+SIGNUP_DOMAINS = "teamsparq.com"
 
 [assets]
 binding = "ASSETS"

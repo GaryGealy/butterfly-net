@@ -4,6 +4,9 @@
 	import IntroDemo from '#lib/components/IntroDemo.svelte';
 
 	let { data } = $props();
+	const signupHref = $derived(
+		data.invite ? resolve(`/signup?invite=${encodeURIComponent(data.invite)}`) : resolve('/signup')
+	);
 </script>
 
 <svelte:head><title>Welcome · Butterfly Net</title></svelte:head>
@@ -17,7 +20,7 @@
 			Here's Butterfly Net
 		</h1>
 		<a
-			href={resolve(`/signup?invite=${encodeURIComponent(data.invite)}`)}
+			href={signupHref}
 			class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink"
 			>Skip to sign-up</a
 		>
@@ -26,17 +29,14 @@
 		<IntroDemo>
 			{#snippet skip()}
 				<a
-					href={resolve(`/signup?invite=${encodeURIComponent(data.invite)}`)}
+					href={signupHref}
 					class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink"
 					>Go straight to sign-up</a
 				>
 			{/snippet}
 		</IntroDemo>
 	</div>
-	<a
-		href={resolve(`/signup?invite=${encodeURIComponent(data.invite)}`)}
-		class="btn-primary mt-6 w-full">Create my account</a
-	>
+	<a href={signupHref} class="btn-primary mt-6 w-full">Create my account</a>
 	<p class="mt-4 text-center text-sm font-bold text-muted">
 		Already have an account? <a href={resolve('/login')} class="text-leaf underline">Log in</a>
 	</p>

@@ -296,7 +296,7 @@ and Cancel. Escape cancels.
 
 ### Intro Demo
 
-Invite links open `/welcome`, a skippable ~14 s re-creation (scenes of 3.5, 4.9 and 5.6 s) of the app built from its own
+Invite links open `/welcome` (it also opens without a code, for a shared company link), a skippable ~14 s re-creation (scenes of 3.5, 4.9 and 5.6 s) of the app built from its own
 classes with sample data: **Catch a thought** (the thought types itself into the capture box,
 Catch reads "Sorting…"), **AI sorts it** (the sage preview proposes **house**, Save presses)
 and **Piles and ageing** (the butterfly drifts across once, the card lands on house and yellows

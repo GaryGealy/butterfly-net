@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { PASSWORD, createInviteCode, gotoReady, logOut, signUp } from './helpers';
 
 test('signing up lands on the piles page', async ({ page }) => {
@@ -43,11 +43,51 @@ test('a wrong password shows an error', async ({ page }) => {
 
 const INVITE_ONLY = 'Butterfly Net is invite-only right now.';
 
-test('sign-up without a usable invite shows the invite-only message', async ({ page }) => {
+test('sign-up without a usable invite shows the invite-only message above the form', async ({
+	page
+}) => {
 	for (const url of ['/signup', '/signup?invite=not-a-real-code']) {
 		await gotoReady(page, url);
 		await expect(page.getByText(INVITE_ONLY)).toBeVisible();
-		await expect(page.getByRole('button', { name: 'Create account' })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+		// The open domain is never advertised on the page.
+		await expect(page.getByText('company.test')).toHaveCount(0);
+	}
+});
+
+const signUpWithoutInvite = async (page: Page, url: string, email: string) => {
+	await gotoReady(page, url);
+	await page.getByLabel('Email').fill(email);
+	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByRole('button', { name: 'Create account' }).click();
+};
+
+test('a company email signs up without an invite, whatever its case', async ({ page }) => {
+	await signUpWithoutInvite(page, '/signup', `Colleague-${Date.now()}@Company.TEST`);
+	await expect(page).toHaveURL('/');
+	// A normal account: no Invites link.
+	await expect(page.getByRole('link', { name: 'Invites' })).toHaveCount(0);
+});
+
+test('a company email still signs up from a used or bogus invite link', async ({ page }) => {
+	await signUpWithoutInvite(
+		page,
+		'/signup?invite=not-a-real-code',
+		`bogus-${Date.now()}@company.test`
+	);
+	await expect(page).toHaveURL('/');
+});
+
+test('any other email without an invite is refused with the invite-only message', async ({
+	page
+}) => {
+	for (const email of [`outsider-${Date.now()}@test.dev`, `look-${Date.now()}@sub.company.test`]) {
+		await signUpWithoutInvite(page, '/signup', email);
+		await expect(page.getByRole('alert')).toHaveText(
+			'Sign-up is invite-only. Ask the person who told you about Butterfly Net for an invite link.'
+		);
+		await expect(page).toHaveURL('/signup');
+		await expect(page.getByLabel('Email')).toHaveValue(email);
 	}
 });
 

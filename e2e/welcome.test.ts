@@ -54,11 +54,23 @@ test('Create my account reaches sign-up and the account is made', async ({ page 
 	await expect(page).toHaveURL('/');
 });
 
-test('a missing or used invite goes straight to the sign-up page', async ({ page }) => {
+test('the intro opens without an invite, and its links reach plain sign-up', async ({ page }) => {
 	await gotoReady(page, '/welcome');
-	await expect(page).toHaveURL('/signup');
-	await expect(page.getByText('Butterfly Net is invite-only right now.')).toBeVisible();
+	await expect(page).toHaveURL('/welcome');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText("Here's Butterfly Net");
+	for (const name of ['Skip to sign-up', 'Go straight to sign-up', 'Create my account']) {
+		await expect(page.getByRole('link', { name })).toHaveAttribute('href', '/signup');
+	}
 
+	await page.getByRole('link', { name: 'Create my account' }).click();
+	await expect(page).toHaveURL('/signup');
+	await page.getByLabel('Email').fill(`slack-${Date.now()}@company.test`);
+	await page.getByLabel('Password').fill(PASSWORD);
+	await page.getByRole('button', { name: 'Create account' }).click();
+	await expect(page).toHaveURL('/');
+});
+
+test('a used or bogus invite goes straight to the sign-up page', async ({ page }) => {
 	await gotoReady(page, '/welcome?invite=not-a-real-code');
 	await expect(page).toHaveURL('/signup?invite=not-a-real-code');
 	await expect(page.getByText('Butterfly Net is invite-only right now.')).toBeVisible();

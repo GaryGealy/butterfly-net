@@ -3,6 +3,9 @@ import { PASSWORD, createInviteCode, gotoReady, signUp } from './helpers';
 
 const caption = (page: Page) => page.locator('[data-caption]');
 const watch = (page: Page) => page.getByRole('button', { name: 'Watch the demo' }).click();
+const nextButton = (page: Page) => page.getByRole('button', { name: 'Next' });
+const fillOf = (page: Page, name: string) =>
+	page.getByRole('button', { name }).locator('[data-fill]');
 
 test('an invite link opens the intro, and Skip reaches sign-up with the invite', async ({
 	page
@@ -21,18 +24,15 @@ test('the intro waits for a choice: nothing plays until Watch the demo', async (
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
 	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toBeVisible();
 	await expect(caption(page)).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Pause' })).toHaveCount(0);
+	await expect(nextButton(page)).toHaveCount(0);
 	await page.waitForTimeout(600);
 	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toBeVisible();
 
 	await watch(page);
 	await expect(page.getByRole('heading', { name: 'New to Butterfly Net?' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Pause' })).toBeFocused();
+	await expect(nextButton(page)).toBeFocused();
 	await expect(caption(page)).toContainText('Catch it before it flutters off');
-	const fill = page
-		.getByRole('button', { name: 'Scene 1: Catch a thought' })
-		.locator('[data-fill]');
-	await expect(fill).not.toHaveAttribute('data-fill', '0.000');
+	await expect(fillOf(page, 'Scene 1: Catch a thought')).not.toHaveAttribute('data-fill', '0.000');
 });
 
 test("the card's Go straight to sign-up reaches the form with the invite", async ({ page }) => {
@@ -81,47 +81,73 @@ test('old sign-up links still work without the intro', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
 });
 
-test('pause holds the demo still, and a scene can be picked', async ({ page }) => {
+test('each scene plays once, then waits for Next', async ({ page }) => {
+	// The animation steps frame by frame, so this runs in real time: scenes 1 and 3, about 13 s.
+	test.slow();
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
 	await watch(page);
-	await page.getByRole('button', { name: 'Pause' }).click();
-	const fill = page
-		.getByRole('button', { name: 'Scene 1: Catch a thought' })
-		.locator('[data-fill]');
-	const before = await fill.getAttribute('data-fill');
-	await page.waitForTimeout(600);
-	expect(await fill.getAttribute('data-fill')).toBe(before);
-	await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
 
+	const scene1 = fillOf(page, 'Scene 1: Catch a thought');
+	await expect(scene1).toHaveAttribute('data-fill', '1.000', { timeout: 10_000 });
+	await page.waitForTimeout(500);
+	await expect(caption(page)).toContainText('Catch it before it flutters off');
+	await expect(fillOf(page, 'Scene 2: AI sorts it')).toHaveAttribute('data-fill', '0.000');
+
+	await nextButton(page).click();
+	await expect(caption(page)).toContainText('AI suggests a pile');
+	await page.getByRole('button', { name: 'Scene 3: Piles and ageing' }).click();
+	await expect(caption(page)).toContainText("come back when you're ready", { timeout: 15_000 });
+	await expect(nextButton(page)).toHaveCount(0);
+
+	await page.getByRole('button', { name: 'Watch again' }).click();
+	await expect(caption(page)).toContainText('Catch it before it flutters off');
+	await expect(nextButton(page)).toBeFocused();
+});
+
+test('Next skips ahead mid-scene, and a scene can be picked', async ({ page }) => {
+	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
+	await watch(page);
+	await nextButton(page).click();
+	await expect(caption(page)).toContainText('AI suggests a pile');
 	await page.getByRole('button', { name: 'Scene 3: Piles and ageing' }).click();
 	await expect(caption(page)).toContainText('yellows like old paper');
+	await page.getByRole('button', { name: 'Scene 1: Catch a thought' }).click();
+	await expect(caption(page)).toContainText('Catch it before it flutters off');
 });
 
 test('hiding the tab pauses the demo and coming back resumes it', async ({ page }) => {
+	await page.clock.install();
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
 	await watch(page);
+	await page.clock.runFor(1_000);
 	const setHidden = (hidden: boolean) =>
 		page.evaluate((h) => {
 			Object.defineProperty(document, 'hidden', { value: h, configurable: true });
 			document.dispatchEvent(new Event('visibilitychange'));
 		}, hidden);
+	const fill = fillOf(page, 'Scene 1: Catch a thought');
 	await setHidden(true);
-	await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
+	const before = await fill.getAttribute('data-fill');
+	await page.clock.runFor(2_000);
+	await expect(fill).toHaveAttribute('data-fill', before!);
 	await setHidden(false);
-	await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible();
+	await page.clock.runFor(1_000);
+	await expect(fill).not.toHaveAttribute('data-fill', before!);
 });
 
 test('with reduced motion nothing plays and the scenes switch by hand', async ({ page }) => {
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await gotoReady(page, `/welcome?invite=${createInviteCode()}`);
 	await watch(page);
-	await expect(page.getByRole('button', { name: 'Scene 1: Catch a thought' })).toBeFocused();
-	await expect(page.getByRole('button', { name: 'Pause' })).toHaveCount(0);
+	await expect(nextButton(page)).toBeFocused();
 	const scene2 = page.getByRole('button', { name: 'Scene 2: AI sorts it' });
 	await expect(caption(page)).toContainText('Catch it before it flutters off');
-	await scene2.click();
+	await nextButton(page).click();
 	await expect(scene2).toHaveAttribute('aria-pressed', 'true');
 	await expect(caption(page)).toContainText('AI suggests a pile');
+	await page.getByRole('button', { name: 'Scene 3: Piles and ageing' }).click();
+	await expect(caption(page)).toContainText('yellows like old paper');
+	await scene2.click();
 	await page.waitForTimeout(500);
 	await expect(page.locator('main')).not.toContainText('Claude');
 	await expect(caption(page)).toContainText('AI suggests a pile');
@@ -148,5 +174,10 @@ test('with 200% text on a 320px phone the intro fits without sideways scrolling'
 	}
 	await watch(page);
 	expect(await overflow()).toBe(0);
+	// Next wraps below the progress segments rather than squeezing them away.
+	const segment = await page
+		.getByRole('button', { name: 'Scene 1: Catch a thought' })
+		.boundingBox();
+	expect(segment!.width).toBeGreaterThan(40);
 	await expect(page.getByRole('link', { name: 'Create my account' })).toBeVisible();
 });

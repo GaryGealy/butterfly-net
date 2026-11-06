@@ -106,6 +106,10 @@ People with an email at a domain in `SIGNUP_DOMAINS` (`wrangler.toml` `[vars]`, 
 at `/signup`. The address isn't verified, and the page still reads invite-only, so tell them
 their company email works.
 
+Admins can see everyone who has signed up at **Users** in the header (`/users`): newest first,
+with when they joined and whether they came in through an invite (and whose) or a company email.
+It's read-only.
+
 Everyone except admins gets 20 Claude sorts a day (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
 resetting at midnight UTC). Past that, captures still work: the preview asks them to pick the
 pile. Keep a monthly spend limit on the Anthropic workspace as a backstop.

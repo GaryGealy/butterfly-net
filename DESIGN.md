@@ -356,7 +356,12 @@ The wordmark is the butterfly in a 40px New Shoot circle, drifting 4px with a ±
 over 3s (only with `motion-safe`), next to "Butterfly Net" in Headline type. Links are
 700-weight Moss Grey, turning Bark on hover and for the current page, each with a 44px-tall hit area. The signed-in email
 sits in a white pill chip, truncated past 16rem. On phones the row wraps rather than
-collapsing into a menu.
+collapsing into a menu. Admins also get **Invites** and **Users**; nobody else sees those links.
+
+The admin **Users** page lists every account newest first as Card Chips: the email in bold
+(wrapping anywhere), an **Admin** pill in New Shoot on admin accounts, and a Moss Grey line with
+the sign-up time in UTC and how they got in ("Invite from …", "Company email" or "No invite").
+The count sits under the heading.
 
 ### Undo Toast
 

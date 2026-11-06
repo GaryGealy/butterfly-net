@@ -57,6 +57,11 @@
 						class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
 						aria-current={page.url.pathname === '/invites' ? 'page' : undefined}>Invites</a
 					>
+					<a
+						href={resolve('/users')}
+						class="inline-flex min-h-11 items-center font-bold text-muted hover:text-ink aria-[current=page]:text-ink"
+						aria-current={page.url.pathname === '/users' ? 'page' : undefined}>Users</a
+					>
 				{/if}
 				<div class="flex max-w-full min-w-0 items-center gap-3">
 					<span

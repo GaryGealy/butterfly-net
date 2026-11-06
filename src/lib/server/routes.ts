@@ -29,3 +29,10 @@ export function requireUser(locals: App.Locals): SessionUser {
 	if (!locals.user) error(401, 'Not signed in');
 	return locals.user;
 }
+
+/** Non-admins get a 404, so an admin page's existence isn't revealed. */
+export function requireAdmin(locals: App.Locals): SessionUser {
+	const user = requireUser(locals);
+	if (!locals.isAdmin) error(404, 'Not found');
+	return user;
+}

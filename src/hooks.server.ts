@@ -1,12 +1,12 @@
 import { json, redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { env } from 'cloudflare:workers';
-import { dev } from '$app/env';
 import { isAdminEmail } from './lib/server/admin';
 import { validateSession } from './lib/server/auth';
 import { getDb } from './lib/server/db';
 import { isPublicPath } from './lib/server/routes';
 import { SESSION_COOKIE_NAME } from './lib/server/session-cookie';
+import { serverVar } from './lib/server/vars';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Bindings come from cloudflare:workers; adapter-cloudflare 8 doesn't pass event.platform.
@@ -15,11 +15,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const sessionId = event.cookies.get(SESSION_COOKIE_NAME);
 	event.locals.user = sessionId ? await validateSession(event.locals.db, sessionId) : null;
 
-	// The e2e server names its own admins; everywhere else the wrangler.toml var decides.
-	const adminEmails =
-		dev && process.env.ADMIN_EMAILS !== undefined ? process.env.ADMIN_EMAILS : env.ADMIN_EMAILS;
 	event.locals.isAdmin = event.locals.user
-		? isAdminEmail(event.locals.user.email, adminEmails)
+		? isAdminEmail(event.locals.user.email, serverVar('ADMIN_EMAILS'))
 		: false;
 
 	// Gate everything by default, so a new route is protected without remembering to opt in.

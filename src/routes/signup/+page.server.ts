@@ -1,6 +1,4 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { env } from 'cloudflare:workers';
-import { dev } from '$app/env';
 import { EmailTakenError, createSession, registerUser } from '../../lib/server/auth';
 import {
 	claimInvite,
@@ -10,6 +8,7 @@ import {
 } from '../../lib/server/invites';
 import { setSessionCookie } from '../../lib/server/session-cookie';
 import { canSignUpWithoutInvite } from '../../lib/server/signup-domains';
+import { serverVar } from '../../lib/server/vars';
 import { credentialsSchema } from '../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -30,13 +29,8 @@ export const actions: Actions = {
 		const parsed = credentialsSchema.safeParse({ email, password: form.get('password') });
 		if (!parsed.success) return fail(400, { email, error: parsed.error.issues[0].message });
 
-		// The e2e server names its own open domains; everywhere else the wrangler.toml var decides.
-		const signupDomains =
-			dev && process.env.SIGNUP_DOMAINS !== undefined
-				? process.env.SIGNUP_DOMAINS
-				: env.SIGNUP_DOMAINS;
 		// An open-domain email needs no invite, so it never spends one it happens to carry.
-		const openDomain = canSignUpWithoutInvite(parsed.data.email, signupDomains);
+		const openDomain = canSignUpWithoutInvite(parsed.data.email, serverVar('SIGNUP_DOMAINS'));
 		const invite = openDomain
 			? null
 			: await claimInvite(locals.db, String(form.get('invite') ?? ''));

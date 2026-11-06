@@ -35,7 +35,8 @@ The idea's record lives in idea-forge as `digital-assistant`
   confirm with Gary first.
 - Don't change the Claude model (`claude-haiku-5-5`, low effort) or the 5 s parse timeout
   without asking — the live smoke check in Task 15 is how that decision gets made.
-- Sign-up is invite-only (`/invites`, admins from `ADMIN_EMAILS` in `wrangler.toml`), except that
+- Sign-up is invite-only (`/invites`, admins from `ADMIN_EMAILS` in `wrangler.toml`; admins also
+  get a read-only `/users` list), except that
   emails at a `SIGNUP_DOMAINS` domain (`teamsparq.com`, unverified) need no invite. The page still
   says invite-only and never names the domain. Invite links open the `/welcome` intro demo, which
   also opens without a code, and leads to `/signup`. Non-admins get `DAILY_PARSE_LIMIT` Claude

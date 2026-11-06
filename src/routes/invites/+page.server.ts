@@ -1,14 +1,6 @@
-import { error } from '@sveltejs/kit';
 import { createInvite, listInvites, revokeInvite } from '../../lib/server/invites';
-import { requireUser } from '../../lib/server/routes';
+import { requireAdmin } from '../../lib/server/routes';
 import type { Actions, PageServerLoad } from './$types';
-
-/** Non-admins get a 404, so the page's existence isn't revealed. */
-function requireAdmin(locals: App.Locals) {
-	const user = requireUser(locals);
-	if (!locals.isAdmin) error(404, 'Not found');
-	return user;
-}
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireAdmin(locals);

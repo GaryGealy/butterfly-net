@@ -92,3 +92,38 @@ test('with 200% text on a 320px phone the suggestions fit without sideways scrol
 	);
 	expect(overflow).toBeLessThanOrEqual(0);
 });
+
+test('Save and Add wait for each other, so neither can undo the other', async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Learn about graphs');
+	await openCard(page, 'Learn about graphs');
+	await page.getByRole('button', { name: 'Break it down' }).click();
+	await expect(page.getByRole('group', { name: 'Suggested steps' })).toBeVisible();
+
+	// Hold the Add request until the test lets it go.
+	let release = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	await page.route('**/api/cards/*/subtasks', async (route) => {
+		await held;
+		await route.continue();
+	});
+	await page.getByRole('button', { name: 'Add 3 steps' }).click();
+	await expect(page.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+	release();
+	await expect(page.getByRole('status').filter({ hasText: 'Added 3 steps' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Save changes' })).toBeEnabled();
+});
+
+test('saving the card keeps the suggestions', async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Learn about graphs');
+	await openCard(page, 'Learn about graphs');
+	await page.getByRole('button', { name: 'Break it down' }).click();
+	const suggestions = page.getByRole('group', { name: 'Suggested steps' });
+	await expect(suggestions.getByRole('checkbox')).toHaveCount(3);
+
+	await page.getByLabel('Title').fill('Learn about graph databases');
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+	await expect(suggestions.getByRole('checkbox')).toHaveCount(3);
+});

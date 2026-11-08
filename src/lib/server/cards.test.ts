@@ -265,34 +265,47 @@ describe('appendSubtasks', () => {
 
 	it('adds steps after the existing subtasks, not done, with their links', async () => {
 		const id = await createCard(db, userId, newCard({ subtasks: ['first'] }));
-		const list = await appendSubtasks(db, userId, id, [
+		await appendSubtasks(db, userId, id, [
 			step('Watch an intro', 'https://x.dev/v', 'Intro video'),
 			step('Sketch it')
 		]);
-		expect(list.map(({ text, done, url, linkTitle }) => ({ text, done, url, linkTitle }))).toEqual([
+		const card = await getCard(db, userId, id);
+		expect(
+			card?.subtasks.map(({ text, done, url, linkTitle }) => ({ text, done, url, linkTitle }))
+		).toEqual([
 			{ text: 'first', done: false, url: null, linkTitle: null },
 			{ text: 'Watch an intro', done: false, url: 'https://x.dev/v', linkTitle: 'Intro video' },
 			{ text: 'Sketch it', done: false, url: null, linkTitle: null }
 		]);
-		expect((await getCard(db, userId, id))?.subtasks).toEqual(list);
+	});
+
+	it('returns only the rows it inserted', async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['first'] }));
+		const added = await appendSubtasks(db, userId, id, [step('Sketch it')]);
+		expect(added.map((s) => s.text)).toEqual(['Sketch it']);
+		expect((await getCard(db, userId, id))?.subtasks.slice(1)).toEqual(added);
 	});
 
 	it('skips steps that repeat an existing subtask or an earlier step', async () => {
 		const id = await createCard(db, userId, newCard({ subtasks: ['Read the paper'] }));
-		const list = await appendSubtasks(db, userId, id, [
+		const added = await appendSubtasks(db, userId, id, [
 			step(' read  THE paper '),
 			step('Sketch it'),
 			step('sketch it')
 		]);
-		expect(list.map((s) => s.text)).toEqual(['Read the paper', 'Sketch it']);
+		expect(added.map((s) => s.text)).toEqual(['Sketch it']);
+		expect((await getCard(db, userId, id))?.subtasks.map((s) => s.text)).toEqual([
+			'Read the paper',
+			'Sketch it'
+		]);
 	});
 
 	it('keeps only as many as fit under the subtask limit', async () => {
 		const texts = Array.from({ length: 49 }, (_, i) => `task ${i}`);
 		const id = await createCard(db, userId, newCard({ subtasks: texts }));
-		const list = await appendSubtasks(db, userId, id, [step('a'), step('b'), step('c')]);
-		expect(list).toHaveLength(50);
-		expect(list.at(-1)?.text).toBe('a');
+		const added = await appendSubtasks(db, userId, id, [step('a'), step('b'), step('c')]);
+		expect(added.map((s) => s.text)).toEqual(['a']);
+		expect((await getCard(db, userId, id))?.subtasks).toHaveLength(50);
 	});
 
 	it("refuses another user's card", async () => {

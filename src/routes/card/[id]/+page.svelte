@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { cardAge } from '#lib/card-age.ts';
@@ -32,28 +31,25 @@
 	// rows match what the server kept (blank rows dropped) without clobbering
 	// unsaved edits on other actions.
 	let rows = $state(seed());
-	// Subtask ids already on the page, so Add appends only the rows it created.
-	let knownIds = new SvelteSet<string>();
 	let seededFor: string | undefined;
 	$effect(() => {
 		if (data.card.id !== seededFor) {
-			if (seededFor !== undefined) reseed();
-			else knownIds = new SvelteSet(data.card.subtasks.map((s) => s.id));
+			if (seededFor !== undefined) {
+				rows = seed();
+				// Suggestions belong to the card they were made for.
+				proposals = null;
+				sortsOverride = undefined;
+			}
 			seededFor = data.card.id;
 		}
 	});
-
-	function reseed() {
-		rows = seed();
-		knownIds = new SvelteSet(data.card.subtasks.map((s) => s.id));
-		proposals = null;
-		sortsOverride = undefined;
-	}
 
 	// Break it down: Claude's suggested steps, which the user ticks before adding.
 	let proposals = $state<Proposal[] | null>(null);
 	let breaking = $state(false);
 	let adding = $state(false);
+	// Save rewrites every subtask, so Save and Add never run at the same time.
+	let saving = $state(false);
 	let breakdownError = $state('');
 	let added = $state('');
 	// The count the last press reported; the page load's count until then.
@@ -111,12 +107,11 @@
 				body: JSON.stringify({ steps })
 			});
 			if (!response.ok) throw new Error(`append failed: ${response.status}`);
-			const { subtasks } = (await response.json()) as {
+			// The server returns only the rows it inserted.
+			const { subtasks: fresh } = (await response.json()) as {
 				subtasks: Array<Link & { id: string; text: string; done: boolean }>;
 			};
-			const fresh = subtasks.filter((s) => !knownIds.has(s.id));
 			for (const s of fresh) {
-				knownIds.add(s.id);
 				rows.push({ text: s.text, done: s.done, url: s.url, linkTitle: s.linkTitle });
 			}
 			proposals = null;
@@ -154,11 +149,17 @@
 <form
 	method="POST"
 	action="?/save"
-	use:enhance={() =>
-		async ({ result, update }) => {
+	use:enhance={() => {
+		saving = true;
+		return async ({ result, update }) => {
 			await update({ reset: false });
-			if (result.type === 'success') reseed();
-		}}
+			if (result.type === 'success') {
+				rows = seed();
+				sortsOverride = undefined;
+			}
+			saving = false;
+		};
+	}}
 	class="mt-4 max-w-2xl space-y-4 rounded-field p-5 {color}"
 >
 	<div class="chip space-y-4 px-5 py-4">
@@ -316,7 +317,7 @@
 							<button
 								type="button"
 								onclick={addKept}
-								disabled={adding || keeping.length === 0 || keeping.length > room}
+								disabled={adding || saving || keeping.length === 0 || keeping.length > room}
 								class="btn-primary">Add {plural(keeping.length)}</button
 							>
 							<button type="button" onclick={() => (proposals = null)} class="btn-quiet"
@@ -332,7 +333,7 @@
 	</div>
 
 	<div class="flex flex-wrap items-center gap-3">
-		<button class="btn-primary">Save changes</button>
+		<button class="btn-primary" disabled={adding || saving}>Save changes</button>
 		{#if form?.error}<p role="alert" class="text-sm font-bold text-red-700">{form.error}</p>{/if}
 		{#if form?.saved}<p role="status" class="text-sm font-bold text-leaf">Saved</p>{/if}
 	</div>

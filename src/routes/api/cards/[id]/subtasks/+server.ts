@@ -5,7 +5,7 @@ import { requireUser } from '../../../../../lib/server/routes';
 import { appendStepsSchema } from '../../../../../lib/server/validation';
 import type { RequestHandler } from './$types';
 
-/** Appends the Break it down steps the user kept; returns the card's whole subtask list. */
+/** Appends the Break it down steps the user kept; returns only the rows it inserted. */
 export const POST: RequestHandler = async ({ locals, params, request }) => {
 	const user = requireUser(locals);
 	const body = appendStepsSchema.safeParse(await request.json().catch(() => null));

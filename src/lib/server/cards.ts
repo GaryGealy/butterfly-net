@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, gte } from 'drizzle-orm';
 import { MAX_SUBTASKS } from '../limits';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
@@ -113,7 +113,7 @@ async function insertSubtasks(
 	}
 }
 
-async function listSubtasks(db: Db, cardId: string): Promise<Subtask[]> {
+async function listSubtasks(db: Db, cardId: string, fromOrder = 0): Promise<Subtask[]> {
 	return db
 		.select({
 			id: subtasks.id,
@@ -123,7 +123,7 @@ async function listSubtasks(db: Db, cardId: string): Promise<Subtask[]> {
 			linkTitle: subtasks.link_title
 		})
 		.from(subtasks)
-		.where(eq(subtasks.card_id, cardId))
+		.where(and(eq(subtasks.card_id, cardId), gte(subtasks.sort_order, fromOrder)))
 		.orderBy(asc(subtasks.sort_order));
 }
 
@@ -192,8 +192,8 @@ export async function setSubtasks(
 
 /**
  * Adds steps after a card's subtasks, not done. Steps that repeat an existing subtask or an
- * earlier step are skipped, and only as many as fit under MAX_SUBTASKS are kept. Returns the
- * card's whole subtask list.
+ * earlier step are skipped, and only as many as fit under MAX_SUBTASKS are kept. Returns only
+ * the rows it inserted, so the card page can append exactly those.
  */
 export async function appendSubtasks(
 	db: Db,
@@ -212,7 +212,7 @@ export async function appendSubtasks(
 	}
 	const room = Math.max(0, MAX_SUBTASKS - existing.length);
 	const kept = fresh.slice(0, room);
-	if (kept.length === 0) return existing;
+	if (kept.length === 0) return [];
 
 	const [last] = await db
 		.select({ sort_order: subtasks.sort_order })
@@ -220,9 +220,10 @@ export async function appendSubtasks(
 		.where(eq(subtasks.card_id, cardId))
 		.orderBy(desc(subtasks.sort_order))
 		.limit(1);
-	await insertSubtasks(db, cardId, kept, last ? last.sort_order + 1 : 0);
+	const firstOrder = last ? last.sort_order + 1 : 0;
+	await insertSubtasks(db, cardId, kept, firstOrder);
 	await reindexCard(db, cardId);
-	return listSubtasks(db, cardId);
+	return listSubtasks(db, cardId, firstOrder);
 }
 
 async function setStatus(

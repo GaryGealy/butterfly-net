@@ -28,3 +28,6 @@ test-results
 *.db
 .dev.vars
 .wrangler
+
+# Visual companion mockups from brainstorming
+.superpowers/

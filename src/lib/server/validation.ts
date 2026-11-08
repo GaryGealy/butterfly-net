@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import type { SubtaskInput } from './cards';
+
 import { httpUrl } from './links';
 import {
+	MAX_BREAKDOWN_STEPS,
 	MAX_EMAIL_LENGTH,
 	MAX_NOTES_LENGTH,
 	MAX_PASSWORD_LENGTH,
@@ -98,3 +100,23 @@ export function subtaskRowsFromForm(form: FormData): SubtaskInput[] {
 		.filter((item) => item.text.length > 0)
 		.slice(0, MAX_SUBTASKS);
 }
+
+/** Break it down's kept steps, posted to be appended to a card. */
+export const appendStepsSchema = z.object({
+	steps: z
+		.array(
+			z
+				.object({
+					text: titleSchema,
+					url: z.string().nullable(),
+					linkTitle: z.string().nullable()
+				})
+				.transform(({ text, url, linkTitle }) => {
+					const link = httpUrl(url);
+					const title = link ? (linkTitle ?? '').trim().slice(0, MAX_TITLE_LENGTH) : '';
+					return { text, url: link, linkTitle: title || null };
+				})
+		)
+		.min(1, 'Pick at least one step')
+		.max(MAX_BREAKDOWN_STEPS, `At most ${MAX_BREAKDOWN_STEPS} steps`)
+});

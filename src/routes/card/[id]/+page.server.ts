@@ -7,9 +7,11 @@ import {
 	setSubtasks,
 	updateCard
 } from '../../../lib/server/cards';
+import { DAILY_PARSE_LIMIT } from '../../../lib/limits';
 import { NotFoundError } from '../../../lib/server/errors';
 import { listPiles } from '../../../lib/server/piles';
 import { requireUser } from '../../../lib/server/routes';
+import { parsesToday } from '../../../lib/server/usage';
 import { cardEditSchema, subtaskRowsFromForm } from '../../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -17,7 +19,11 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const user = requireUser(locals);
 	const card = await getCard(locals.db, user.id, params.id);
 	if (!card) error(404, 'Card not found');
-	return { card, piles: await listPiles(locals.db, user.id), now: new Date() };
+	// Admins aren't counted, so they have no allowance to show.
+	const sortsLeft = locals.isAdmin
+		? null
+		: Math.max(0, DAILY_PARSE_LIMIT - (await parsesToday(locals.db, user.id)));
+	return { card, piles: await listPiles(locals.db, user.id), now: new Date(), sortsLeft };
 };
 
 async function orNotFound(run: () => Promise<void>): Promise<void> {

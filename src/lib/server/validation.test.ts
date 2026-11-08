@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_EMAIL_LENGTH, MAX_NOTES_LENGTH } from '../limits';
 import {
 	captureSaveSchema,
+	appendStepsSchema,
 	credentialsSchema,
 	subtaskRowsFromForm,
 	subtasksSchema
@@ -135,5 +136,34 @@ describe('subtaskRowsFromForm', () => {
 		expect(subtaskRowsFromForm(data)).toEqual([
 			{ text: 'Old form', done: false, url: null, linkTitle: null }
 		]);
+	});
+});
+
+describe('appendStepsSchema', () => {
+	const step = { text: 'Watch', url: 'https://x.dev/v', linkTitle: 'A video' };
+
+	it('accepts 1–8 steps, with or without a link', () => {
+		expect(appendStepsSchema.safeParse({ steps: [step] }).success).toBe(true);
+		expect(
+			appendStepsSchema.safeParse({ steps: [{ text: 'Sketch', url: null, linkTitle: null }] })
+				.success
+		).toBe(true);
+	});
+
+	it('refuses no steps, more than 8, a blank step and an overlong step', () => {
+		expect(appendStepsSchema.safeParse({ steps: [] }).success).toBe(false);
+		expect(appendStepsSchema.safeParse({ steps: Array(9).fill(step) }).success).toBe(false);
+		expect(appendStepsSchema.safeParse({ steps: [{ ...step, text: '  ' }] }).success).toBe(false);
+		expect(
+			appendStepsSchema.safeParse({ steps: [{ ...step, text: 'x'.repeat(201) }] }).success
+		).toBe(false);
+	});
+
+	it('drops a link that is not http(s), along with its title', () => {
+		expect(
+			appendStepsSchema.parse({
+				steps: [{ text: 'Go', url: 'javascript:alert(1)', linkTitle: 'x' }]
+			})
+		).toEqual({ steps: [{ text: 'Go', url: null, linkTitle: null }] });
 	});
 });

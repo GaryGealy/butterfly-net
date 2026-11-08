@@ -12,3 +12,6 @@ export const MAX_SEARCH_LENGTH = 200;
 
 // Claude sorts per non-admin user per UTC day; past it, captures fall back to picking a pile.
 export const DAILY_PARSE_LIMIT = 20;
+
+// Most steps one Break it down press can propose or add.
+export const MAX_BREAKDOWN_STEPS = 8;

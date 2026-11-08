@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import type { Db } from './db';
 import { parseUsage } from './db/schema';
 
@@ -18,4 +18,14 @@ export async function countParse(db: Db, userId: string, now = new Date()): Prom
 		})
 		.returning({ count: parseUsage.count });
 	return row.count;
+}
+
+/** How many Claude sorts the user has asked for today, without counting one. */
+export async function parsesToday(db: Db, userId: string, now = new Date()): Promise<number> {
+	const [row] = await db
+		.select({ count: parseUsage.count })
+		.from(parseUsage)
+		.where(and(eq(parseUsage.user_id, userId), eq(parseUsage.day, usageDay(now))))
+		.limit(1);
+	return row?.count ?? 0;
 }

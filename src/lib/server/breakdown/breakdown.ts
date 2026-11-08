@@ -1,12 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { MAX_TITLE_LENGTH } from '../../limits';
+import { MAX_BREAKDOWN_STEPS, MAX_TITLE_LENGTH } from '../../limits';
 import { httpUrl, sameStepText, sameUrl } from '../links';
 import { PARSE_MODEL } from '../parse/parse';
 import { BREAKDOWN_JSON_SCHEMA, breakdownReplySchema } from './schema';
 
 /** Web search makes this slower than a capture sort; the capture timeout stays 5 s. */
 export const BREAKDOWN_TIMEOUT_MS = 30_000;
-export const MAX_BREAKDOWN_STEPS = 8;
+export { MAX_BREAKDOWN_STEPS };
 export const BREAKDOWN_MAX_SEARCHES = 4;
 
 export interface BreakdownCard {

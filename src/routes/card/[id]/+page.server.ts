@@ -1,5 +1,4 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { MAX_SUBTASKS, MAX_TITLE_LENGTH } from '../../../lib/limits';
 import {
 	deleteCard,
 	getCard,
@@ -11,7 +10,7 @@ import {
 import { NotFoundError } from '../../../lib/server/errors';
 import { listPiles } from '../../../lib/server/piles';
 import { requireUser } from '../../../lib/server/routes';
-import { cardEditSchema } from '../../../lib/server/validation';
+import { cardEditSchema, subtaskRowsFromForm } from '../../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -41,15 +40,7 @@ export const actions: Actions = {
 		});
 		if (!parsed.success) return fail(400, { error: parsed.error.issues[0].message });
 
-		const doneRows = new Set(form.getAll('subtask_done').map(String));
-		const items = form
-			.getAll('subtask_text')
-			.map((value, i) => ({
-				text: String(value).trim().slice(0, MAX_TITLE_LENGTH),
-				done: doneRows.has(String(i))
-			}))
-			.filter((item) => item.text.length > 0)
-			.slice(0, MAX_SUBTASKS);
+		const items = subtaskRowsFromForm(form);
 
 		await orNotFound(async () => {
 			await updateCard(locals.db, user.id, params.id, parsed.data);

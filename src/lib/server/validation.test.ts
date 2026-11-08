@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_EMAIL_LENGTH, MAX_NOTES_LENGTH } from '../limits';
-import { captureSaveSchema, credentialsSchema, subtasksSchema } from './validation';
+import {
+	captureSaveSchema,
+	credentialsSchema,
+	subtaskRowsFromForm,
+	subtasksSchema
+} from './validation';
 
 describe('credentialsSchema', () => {
 	it('normalizes email and requires 8+ character passwords', () => {
@@ -78,5 +83,57 @@ describe('captureSaveSchema', () => {
 		);
 		const tooLong = captureSaveSchema.safeParse({ ...base, notes: 'x'.repeat(1001), pile });
 		expect(tooLong.error?.issues[0].message).toBe('Notes must be 1000 characters or fewer');
+	});
+});
+
+describe('subtaskRowsFromForm', () => {
+	const form = (rows: Array<[string, string, string, boolean]>) => {
+		const data = new FormData();
+		rows.forEach(([text, url, linkTitle, done], i) => {
+			data.append('subtask_text', text);
+			data.append('subtask_url', url);
+			data.append('subtask_link_title', linkTitle);
+			if (done) data.append('subtask_done', String(i));
+		});
+		return data;
+	};
+
+	it('keeps each row with its link and done flag', () => {
+		expect(
+			subtaskRowsFromForm(
+				form([
+					['Watch', 'https://x.dev/v', 'A video', false],
+					['Sketch', '', '', true]
+				])
+			)
+		).toEqual([
+			{ text: 'Watch', done: false, url: 'https://x.dev/v', linkTitle: 'A video' },
+			{ text: 'Sketch', done: true, url: null, linkTitle: null }
+		]);
+	});
+
+	it('drops a link that is not http(s), along with its title', () => {
+		expect(subtaskRowsFromForm(form([['Watch', 'javascript:alert(1)', 'x', false]]))).toEqual([
+			{ text: 'Watch', done: false, url: null, linkTitle: null }
+		]);
+	});
+
+	it('drops blank rows but keeps the done flags lined up', () => {
+		expect(
+			subtaskRowsFromForm(
+				form([
+					['  ', '', '', false],
+					['Second', '', '', true]
+				])
+			)
+		).toEqual([{ text: 'Second', done: true, url: null, linkTitle: null }]);
+	});
+
+	it('works for rows posted without link fields', () => {
+		const data = new FormData();
+		data.append('subtask_text', 'Old form');
+		expect(subtaskRowsFromForm(data)).toEqual([
+			{ text: 'Old form', done: false, url: null, linkTitle: null }
+		]);
 	});
 });

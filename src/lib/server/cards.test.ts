@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import {
+	appendSubtasks,
 	createCard,
 	deleteCard,
 	getCard,
@@ -15,6 +16,7 @@ import type { Db } from './db';
 import { allSql } from './db/raw';
 import { NotFoundError } from './errors';
 import { listPiles, seedDefaultPiles, type Pile } from './piles';
+import { searchCards } from './search';
 import { createTestDb, createTestUser } from './test/db';
 
 let db: Db;
@@ -140,6 +142,19 @@ describe('updateCard and setSubtasks', () => {
 		expect(await allSql(db, q)).toEqual([{ subtasks: 'alpha\nbeta' }]);
 	});
 
+	it('keeps a link on a subtask, and none when it is omitted', async () => {
+		const id = await createCard(db, userId, newCard());
+		await setSubtasks(db, userId, id, [
+			{ text: 'Watch', done: false, url: 'https://x.dev/v', linkTitle: 'A video' },
+			{ text: 'Sketch', done: true }
+		]);
+		const card = await getCard(db, userId, id);
+		expect(card?.subtasks.map(({ text, url, linkTitle }) => ({ text, url, linkTitle }))).toEqual([
+			{ text: 'Watch', url: 'https://x.dev/v', linkTitle: 'A video' },
+			{ text: 'Sketch', url: null, linkTitle: null }
+		]);
+	});
+
 	it("changes nothing on another user's card", async () => {
 		const id = await createCard(db, userId, newCard({ subtasks: ['mine'] }));
 		const other = await createTestUser(db);
@@ -238,5 +253,58 @@ describe('search index maintenance', () => {
 		[row] = await allSql<Row>(db, sql`SELECT * FROM cards_fts WHERE card_id = ${id}`);
 		expect(row.title).toBe('New title');
 		expect(row.notes).toBe('');
+	});
+});
+
+describe('appendSubtasks', () => {
+	const step = (text: string, url: string | null = null, linkTitle: string | null = null) => ({
+		text,
+		url,
+		linkTitle
+	});
+
+	it('adds steps after the existing subtasks, not done, with their links', async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['first'] }));
+		const list = await appendSubtasks(db, userId, id, [
+			step('Watch an intro', 'https://x.dev/v', 'Intro video'),
+			step('Sketch it')
+		]);
+		expect(list.map(({ text, done, url, linkTitle }) => ({ text, done, url, linkTitle }))).toEqual([
+			{ text: 'first', done: false, url: null, linkTitle: null },
+			{ text: 'Watch an intro', done: false, url: 'https://x.dev/v', linkTitle: 'Intro video' },
+			{ text: 'Sketch it', done: false, url: null, linkTitle: null }
+		]);
+		expect((await getCard(db, userId, id))?.subtasks).toEqual(list);
+	});
+
+	it('skips steps that repeat an existing subtask or an earlier step', async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['Read the paper'] }));
+		const list = await appendSubtasks(db, userId, id, [
+			step(' read  THE paper '),
+			step('Sketch it'),
+			step('sketch it')
+		]);
+		expect(list.map((s) => s.text)).toEqual(['Read the paper', 'Sketch it']);
+	});
+
+	it('keeps only as many as fit under the subtask limit', async () => {
+		const texts = Array.from({ length: 49 }, (_, i) => `task ${i}`);
+		const id = await createCard(db, userId, newCard({ subtasks: texts }));
+		const list = await appendSubtasks(db, userId, id, [step('a'), step('b'), step('c')]);
+		expect(list).toHaveLength(50);
+		expect(list.at(-1)?.text).toBe('a');
+	});
+
+	it("refuses another user's card", async () => {
+		const id = await createCard(db, userId, newCard());
+		const other = await createTestUser(db);
+		await expect(appendSubtasks(db, other, id, [step('x')])).rejects.toThrow(NotFoundError);
+		expect((await getCard(db, userId, id))?.subtasks).toEqual([]);
+	});
+
+	it('makes the new steps searchable', async () => {
+		const id = await createCard(db, userId, newCard());
+		await appendSubtasks(db, userId, id, [step('Watch the zeppelin documentary')]);
+		expect((await searchCards(db, userId, 'zeppelin')).map((r) => r.id)).toEqual([id]);
 	});
 });

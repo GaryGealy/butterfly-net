@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { SubtaskInput } from './cards';
+import { httpUrl } from './links';
 import {
 	MAX_EMAIL_LENGTH,
 	MAX_NOTES_LENGTH,
@@ -67,3 +69,32 @@ export const cardEditSchema = z.object({
 	notes: notesSchema,
 	pileId: z.string().min(1, 'Choose a pile')
 });
+
+/**
+ * The card page's subtask rows, posted as parallel fields (`subtask_text`, `subtask_url`,
+ * `subtask_link_title`) plus `subtask_done` holding the indexes of ticked rows. Blank rows are
+ * dropped, and a link that isn't http(s) is dropped along with its title.
+ */
+export function subtaskRowsFromForm(form: FormData): SubtaskInput[] {
+	const doneRows = new Set(form.getAll('subtask_done').map(String));
+	const urls = form.getAll('subtask_url');
+	const titles = form.getAll('subtask_link_title');
+	return form
+		.getAll('subtask_text')
+		.map((value, i) => {
+			const url = httpUrl(urls[i]);
+			const linkTitle = url
+				? String(titles[i] ?? '')
+						.trim()
+						.slice(0, MAX_TITLE_LENGTH)
+				: '';
+			return {
+				text: String(value).trim().slice(0, MAX_TITLE_LENGTH),
+				done: doneRows.has(String(i)),
+				url,
+				linkTitle: linkTitle || null
+			};
+		})
+		.filter((item) => item.text.length > 0)
+		.slice(0, MAX_SUBTASKS);
+}

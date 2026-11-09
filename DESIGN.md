@@ -376,7 +376,15 @@ The count sits under the heading.
 ### Undo Toast
 
 A white pill fixed 1.25rem from the bottom with the float shadow. It reads "Done:
-{title}" with an **Undo** pill in New Shoot and Deep Leaf. It disappears after 6 seconds.
+{title}" (or "Moved to {pile}: {title}" after a drag) with an **Undo** pill in New Shoot and
+Deep Leaf. It disappears after 6 seconds. A failed move shows the same pill as an alert, without
+Undo.
+
+### Drag to Move
+
+With a mouse or trackpad (`pointer: fine`) a Card Chip is draggable and shows a grab cursor. The
+chip being dragged fades to 40%, and the pile under it gets a 4px Leaf Green ring. A dropped card
+moves at once and slots into its pile by age, newest first. Touch screens get no dragging.
 
 ## Do's and Don'ts
 

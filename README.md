@@ -114,6 +114,9 @@ On a card's page, **Break it down** has Claude search the web and suggest steps,
 link to a video, article or paper. Tick the ones to keep and press **Add**; they're saved straight
 away, and a linked step gets a ↗ button. Links only come from that search's real results.
 
+On a computer, drag a card onto another pile on the board to move it; it saves at once and the
+toast offers **Undo**. On a phone, move a card from its page with the **Pile** dropdown.
+
 Everyone except admins gets 20 Claude sorts a day (a Break it down press counts as one) (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
 resetting at midnight UTC). Past that, captures still work: the preview asks them to pick the
 pile. Keep a monthly spend limit on the Anthropic workspace as a backstop.

@@ -110,7 +110,11 @@ Admins can see everyone who has signed up at **Users** in the header (`/users`):
 with when they joined and whether they came in through an invite (and whose) or a company email.
 It's read-only.
 
-Everyone except admins gets 20 Claude sorts a day (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
+On a card's page, **Break it down** has Claude search the web and suggest steps, some with a
+link to a video, article or paper. Tick the ones to keep and press **Add**; they're saved straight
+away, and a linked step gets a ↗ button. Links only come from that search's real results.
+
+Everyone except admins gets 20 Claude sorts a day (a Break it down press counts as one) (`DAILY_PARSE_LIMIT` in `src/lib/limits.ts`,
 resetting at midnight UTC). Past that, captures still work: the preview asks them to pick the
 pile. Keep a monthly spend limit on the Anthropic workspace as a backstop.
 

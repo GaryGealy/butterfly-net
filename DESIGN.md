@@ -294,6 +294,16 @@ amber-900 notice. Then a white chip holding the editable title (Headline type), 
 subtasks (hollow circles, ✕ to remove). Below that, a pill-shaped pile select and Save
 and Cancel. Escape cancels.
 
+### Break It Down (card page)
+
+Under the card's subtasks, a **Break it down** soft button (it reads **Finding steps…** while
+Claude searches, and is disabled with "You're out of sorts for today." when the allowance is
+used). Suggestions appear in a white, bordered **Suggested steps** group: a checkbox per step
+(all ticked), with the link's title and site in muted text under a linked step, then **Add N
+steps** (primary) and **Cancel** (quiet). A subtask with a link shows a round leaf-tint ↗ button
+(44 px, opens in a new tab, named "Open: <title>") between its text and ✕. Holds at 200% text on
+a 320px phone.
+
 ### Intro Demo
 
 Invite links open `/welcome` (it also opens without a code, for a shared company link), a skippable ~14 s re-creation (scenes of 3.5, 4.9 and 5.6 s) of the app built from its own

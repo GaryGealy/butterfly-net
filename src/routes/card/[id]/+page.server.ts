@@ -1,5 +1,4 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import { MAX_SUBTASKS, MAX_TITLE_LENGTH } from '../../../lib/limits';
 import {
 	deleteCard,
 	getCard,
@@ -8,17 +7,23 @@ import {
 	setSubtasks,
 	updateCard
 } from '../../../lib/server/cards';
+import { DAILY_PARSE_LIMIT } from '../../../lib/limits';
 import { NotFoundError } from '../../../lib/server/errors';
 import { listPiles } from '../../../lib/server/piles';
 import { requireUser } from '../../../lib/server/routes';
-import { cardEditSchema } from '../../../lib/server/validation';
+import { parsesToday } from '../../../lib/server/usage';
+import { cardEditSchema, subtaskRowsFromForm } from '../../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
 	const user = requireUser(locals);
 	const card = await getCard(locals.db, user.id, params.id);
 	if (!card) error(404, 'Card not found');
-	return { card, piles: await listPiles(locals.db, user.id), now: new Date() };
+	// Admins aren't counted, so they have no allowance to show.
+	const sortsLeft = locals.isAdmin
+		? null
+		: Math.max(0, DAILY_PARSE_LIMIT - (await parsesToday(locals.db, user.id)));
+	return { card, piles: await listPiles(locals.db, user.id), now: new Date(), sortsLeft };
 };
 
 async function orNotFound(run: () => Promise<void>): Promise<void> {
@@ -41,15 +46,7 @@ export const actions: Actions = {
 		});
 		if (!parsed.success) return fail(400, { error: parsed.error.issues[0].message });
 
-		const doneRows = new Set(form.getAll('subtask_done').map(String));
-		const items = form
-			.getAll('subtask_text')
-			.map((value, i) => ({
-				text: String(value).trim().slice(0, MAX_TITLE_LENGTH),
-				done: doneRows.has(String(i))
-			}))
-			.filter((item) => item.text.length > 0)
-			.slice(0, MAX_SUBTASKS);
+		const items = subtaskRowsFromForm(form);
 
 		await orNotFound(async () => {
 			await updateCard(locals.db, user.id, params.id, parsed.data);

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from './db';
 import { createTestDb, createTestUser } from './test/db';
-import { countParse, usageDay } from './usage';
+import { countParse, parsesToday, usageDay } from './usage';
 
 let db: Db;
 let userId: string;
@@ -37,5 +37,17 @@ describe('countParse', () => {
 		await countParse(db, userId, now);
 		await countParse(db, userId, now);
 		expect(await countParse(db, other, now)).toBe(1);
+	});
+});
+
+describe('parsesToday', () => {
+	it("reads today's count without changing it, and ignores other days", async () => {
+		const today = new Date('2026-11-08T10:00:00Z');
+		await countParse(db, userId, new Date('2026-11-07T10:00:00Z'));
+		expect(await parsesToday(db, userId, today)).toBe(0);
+		await countParse(db, userId, today);
+		await countParse(db, userId, today);
+		expect(await parsesToday(db, userId, today)).toBe(2);
+		expect(await parsesToday(db, userId, today)).toBe(2);
 	});
 });

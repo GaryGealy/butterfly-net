@@ -1,5 +1,9 @@
 import { z } from 'zod';
+import type { SubtaskInput } from './cards';
+
+import { httpUrl } from './links';
 import {
+	MAX_BREAKDOWN_STEPS,
 	MAX_EMAIL_LENGTH,
 	MAX_NOTES_LENGTH,
 	MAX_PASSWORD_LENGTH,
@@ -66,4 +70,53 @@ export const cardEditSchema = z.object({
 	title: titleSchema,
 	notes: notesSchema,
 	pileId: z.string().min(1, 'Choose a pile')
+});
+
+/**
+ * The card page's subtask rows, posted as parallel fields (`subtask_text`, `subtask_url`,
+ * `subtask_link_title`) plus `subtask_done` holding the indexes of ticked rows. Blank rows are
+ * dropped, and a link that isn't http(s) is dropped along with its title.
+ */
+export function subtaskRowsFromForm(form: FormData): SubtaskInput[] {
+	const doneRows = new Set(form.getAll('subtask_done').map(String));
+	const urls = form.getAll('subtask_url');
+	const titles = form.getAll('subtask_link_title');
+	return form
+		.getAll('subtask_text')
+		.map((value, i) => {
+			const url = httpUrl(urls[i]);
+			const linkTitle = url
+				? String(titles[i] ?? '')
+						.trim()
+						.slice(0, MAX_TITLE_LENGTH)
+				: '';
+			return {
+				text: String(value).trim().slice(0, MAX_TITLE_LENGTH),
+				done: doneRows.has(String(i)),
+				url,
+				linkTitle: linkTitle || null
+			};
+		})
+		.filter((item) => item.text.length > 0)
+		.slice(0, MAX_SUBTASKS);
+}
+
+/** Break it down's kept steps, posted to be appended to a card. */
+export const appendStepsSchema = z.object({
+	steps: z
+		.array(
+			z
+				.object({
+					text: titleSchema,
+					url: z.string().nullable(),
+					linkTitle: z.string().nullable()
+				})
+				.transform(({ text, url, linkTitle }) => {
+					const link = httpUrl(url);
+					const title = link ? (linkTitle ?? '').trim().slice(0, MAX_TITLE_LENGTH) : '';
+					return { text, url: link, linkTitle: title || null };
+				})
+		)
+		.min(1, 'Pick at least one step')
+		.max(MAX_BREAKDOWN_STEPS, `At most ${MAX_BREAKDOWN_STEPS} steps`)
 });

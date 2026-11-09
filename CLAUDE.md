@@ -42,3 +42,7 @@ The idea's record lives in idea-forge as `digital-assistant`
   also opens without a code, and leads to `/signup`. Non-admins get `DAILY_PARSE_LIMIT` Claude
   sorts a day. A live smoke check on production needs an invite link from Gary, or a
   teamsparq.com address.
+- **Break it down** (card page) asks the same Haiku model, with the web search server tool, for
+  steps; it has its own 30 s timeout (`BREAKDOWN_TIMEOUT_MS`) and counts as one sort. A step keeps
+  a link only if the URL was in that reply's search results (`src/lib/server/breakdown/`), and
+  only http(s) links are ever stored. Spec: `docs/superpowers/specs/2026-11-08-break-it-down-design.md`.

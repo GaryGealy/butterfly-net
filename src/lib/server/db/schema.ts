@@ -75,6 +75,9 @@ export const subtasks = sqliteTable('subtasks', {
 		.references(() => cards.id, { onDelete: 'cascade' }),
 	text: text('text').notNull(),
 	done: integer('done', { mode: 'boolean' }).notNull().default(false),
+	/** An http(s) link from Break it down, verified against that request's web search results. */
+	url: text('url'),
+	link_title: text('link_title'),
 	sort_order: integer('sort_order').notNull()
 });
 

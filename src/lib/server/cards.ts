@@ -1,7 +1,9 @@
-import { and, asc, desc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, gte } from 'drizzle-orm';
+import { MAX_SUBTASKS } from '../limits';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError } from './errors';
+import { sameStepText } from './links';
 import { getPile, listPiles, type Pile } from './piles';
 import { reindexCard, removeFromIndex } from './search-index';
 
@@ -21,12 +23,23 @@ export interface CardEdit {
 export interface SubtaskInput {
 	text: string;
 	done: boolean;
+	url?: string | null;
+	linkTitle?: string | null;
 }
 
 export interface Subtask {
 	id: string;
 	text: string;
 	done: boolean;
+	url: string | null;
+	linkTitle: string | null;
+}
+
+/** A step to append to a card, as Break it down proposes it. */
+export interface NewStep {
+	text: string;
+	url: string | null;
+	linkTitle: string | null;
 }
 
 export interface CardSummary {
@@ -79,7 +92,12 @@ async function requireCardId(db: Db, userId: string, cardId: string): Promise<vo
 // D1 caps a statement at 100 bound parameters; ~5 per row, so insert in small chunks.
 const SUBTASK_INSERT_CHUNK = 15;
 
-async function insertSubtasks(db: Db, cardId: string, items: SubtaskInput[]): Promise<void> {
+async function insertSubtasks(
+	db: Db,
+	cardId: string,
+	items: SubtaskInput[],
+	firstOrder = 0
+): Promise<void> {
 	for (let start = 0; start < items.length; start += SUBTASK_INSERT_CHUNK) {
 		const chunk = items.slice(start, start + SUBTASK_INSERT_CHUNK);
 		await db.insert(subtasks).values(
@@ -87,10 +105,26 @@ async function insertSubtasks(db: Db, cardId: string, items: SubtaskInput[]): Pr
 				card_id: cardId,
 				text: item.text,
 				done: item.done,
-				sort_order: start + i
+				url: item.url ?? null,
+				link_title: item.url ? (item.linkTitle ?? null) : null,
+				sort_order: firstOrder + start + i
 			}))
 		);
 	}
+}
+
+async function listSubtasks(db: Db, cardId: string, fromOrder = 0): Promise<Subtask[]> {
+	return db
+		.select({
+			id: subtasks.id,
+			text: subtasks.text,
+			done: subtasks.done,
+			url: subtasks.url,
+			linkTitle: subtasks.link_title
+		})
+		.from(subtasks)
+		.where(and(eq(subtasks.card_id, cardId), gte(subtasks.sort_order, fromOrder)))
+		.orderBy(asc(subtasks.sort_order));
 }
 
 export async function createCard(db: Db, userId: string, input: NewCard): Promise<string> {
@@ -126,12 +160,7 @@ export async function getCard(db: Db, userId: string, cardId: string): Promise<C
 		.limit(1);
 	if (!row) return null;
 
-	const items = await db
-		.select({ id: subtasks.id, text: subtasks.text, done: subtasks.done })
-		.from(subtasks)
-		.where(eq(subtasks.card_id, cardId))
-		.orderBy(asc(subtasks.sort_order));
-	return { ...row, subtasks: items };
+	return { ...row, subtasks: await listSubtasks(db, cardId) };
 }
 
 export async function updateCard(
@@ -159,6 +188,42 @@ export async function setSubtasks(
 	await db.delete(subtasks).where(eq(subtasks.card_id, cardId));
 	await insertSubtasks(db, cardId, items);
 	await reindexCard(db, cardId);
+}
+
+/**
+ * Adds steps after a card's subtasks, not done. Steps that repeat an existing subtask or an
+ * earlier step are skipped, and only as many as fit under MAX_SUBTASKS are kept. Returns only
+ * the rows it inserted, so the card page can append exactly those.
+ */
+export async function appendSubtasks(
+	db: Db,
+	userId: string,
+	cardId: string,
+	steps: NewStep[]
+): Promise<Subtask[]> {
+	await requireCardId(db, userId, cardId);
+	const existing = await listSubtasks(db, cardId);
+	const seen = existing.map((s) => s.text);
+	const fresh: SubtaskInput[] = [];
+	for (const step of steps) {
+		if (seen.some((text) => sameStepText(text, step.text))) continue;
+		seen.push(step.text);
+		fresh.push({ ...step, done: false });
+	}
+	const room = Math.max(0, MAX_SUBTASKS - existing.length);
+	const kept = fresh.slice(0, room);
+	if (kept.length === 0) return [];
+
+	const [last] = await db
+		.select({ sort_order: subtasks.sort_order })
+		.from(subtasks)
+		.where(eq(subtasks.card_id, cardId))
+		.orderBy(desc(subtasks.sort_order))
+		.limit(1);
+	const firstOrder = last ? last.sort_order + 1 : 0;
+	await insertSubtasks(db, cardId, kept, firstOrder);
+	await reindexCard(db, cardId);
+	return listSubtasks(db, cardId, firstOrder);
 }
 
 async function setStatus(

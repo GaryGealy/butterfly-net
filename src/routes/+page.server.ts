@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { listActiveCardsByPile, markDone, reopenCard } from '../lib/server/cards';
+import { listActiveCardsByPile, markDone, moveCard, reopenCard } from '../lib/server/cards';
 import { NotFoundError } from '../lib/server/errors';
 import { requireUser } from '../lib/server/routes';
 import type { Actions, PageServerLoad } from './$types';
@@ -31,5 +31,21 @@ export const actions: Actions = {
 	reopen: async ({ locals, request }) => {
 		const user = requireUser(locals);
 		return withCardId(request, (id) => reopenCard(locals.db, user.id, id));
+	},
+	move: async ({ locals, request }) => {
+		const user = requireUser(locals);
+		const form = await request.formData();
+		try {
+			const from = await moveCard(
+				locals.db,
+				user.id,
+				String(form.get('id') ?? ''),
+				String(form.get('pileId') ?? '')
+			);
+			return { from };
+		} catch (e) {
+			if (e instanceof NotFoundError) return fail(404, { error: 'Card or pile not found' });
+			throw e;
+		}
 	}
 };

@@ -8,6 +8,7 @@ import {
 	listActiveCardsByPile,
 	listArchivedCards,
 	markDone,
+	moveCard,
 	reopenCard,
 	setSubtasks,
 	updateCard
@@ -196,6 +197,35 @@ describe('done, reopen, delete', () => {
 		expect(await getCard(db, userId, id)).toBeNull();
 		const indexed = await allSql(db, sql`SELECT card_id FROM cards_fts WHERE card_id = ${id}`);
 		expect(indexed).toHaveLength(0);
+	});
+});
+
+describe('moveCard', () => {
+	it('moves a card to another pile, keeping everything else, and says where it was', async () => {
+		const id = await createCard(
+			db,
+			userId,
+			newCard({ notes: 'by the shed', subtasks: ['buy a latch'] })
+		);
+		expect(await moveCard(db, userId, id, ideas.id)).toBe(house.id);
+		expect(await getCard(db, userId, id)).toMatchObject({
+			pile_id: ideas.id,
+			title: 'Fix the gate latch',
+			notes: 'by the shed',
+			status: 'active'
+		});
+		expect((await getCard(db, userId, id))?.subtasks.map((s) => s.text)).toEqual(['buy a latch']);
+	});
+
+	it("refuses another user's pile and another user's card", async () => {
+		const id = await createCard(db, userId, newCard());
+		const other = await createTestUser(db);
+		await seedDefaultPiles(db, other);
+		const [theirs] = await listPiles(db, other);
+		await expect(moveCard(db, userId, id, theirs.id)).rejects.toThrow(NotFoundError);
+		await expect(moveCard(db, other, id, theirs.id)).rejects.toThrow(NotFoundError);
+		await expect(moveCard(db, userId, 'no-such-card', ideas.id)).rejects.toThrow(NotFoundError);
+		expect((await getCard(db, userId, id))?.pile_id).toBe(house.id);
 	});
 });
 

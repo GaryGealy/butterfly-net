@@ -178,6 +178,24 @@ export async function updateCard(
 	await reindexCard(db, cardId);
 }
 
+/** Moves a card to another of the user's piles; returns the pile it came from, for Undo. */
+export async function moveCard(
+	db: Db,
+	userId: string,
+	cardId: string,
+	pileId: string
+): Promise<string> {
+	const [card] = await db
+		.select({ pile_id: cards.pile_id })
+		.from(cards)
+		.where(ownCard(userId, cardId))
+		.limit(1);
+	if (!card) throw new NotFoundError('card');
+	const pile = await requirePile(db, userId, pileId);
+	await db.update(cards).set({ pile_id: pile.id }).where(ownCard(userId, cardId));
+	return card.pile_id;
+}
+
 export async function setSubtasks(
 	db: Db,
 	userId: string,

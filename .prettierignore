@@ -14,3 +14,5 @@ CLAUDE.md
 .remember/
 worker-configuration.d.ts
 drizzle/meta/
+.claude/skills/
+.claude/agents/

@@ -28,3 +28,6 @@ test-results
 *.db
 .dev.vars
 .wrangler
+
+# research-plan-implement working notes
+.rpi/

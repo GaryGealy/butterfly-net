@@ -112,6 +112,14 @@ status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X PO
 	--data "{\"title\":\"$title\",\"notes\":\"\",\"subtasks\":[],\"pile\":{\"kind\":\"new\",\"name\":\"smoke tests\"}}") || true
 expect_status "POST /api/cards" 201 "$status"
 
+# 4b. A card with 20 subtasks: the insert must stay under D1's 100-bound-parameter cap,
+#     which better-sqlite3 (dev and tests) doesn't enforce.
+subtasks=$(printf '"step %s",' $(seq 1 20)); subtasks="[${subtasks%,}]"
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/api/cards" \
+	-H "$cookie" -H "Origin: $BASE" -H 'Content-Type: application/json' \
+	--data "{\"title\":\"Many steps\",\"notes\":\"\",\"subtasks\":$subtasks,\"pile\":{\"kind\":\"new\",\"name\":\"smoke tests\"}}") || true
+expect_status "POST /api/cards (20 subtasks)" 201 "$status"
+
 # 5. The board shows it.
 body="$WORK/home.html"
 status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$body" -w '%{http_code}' -H "$cookie" "$BASE/") || true

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createCard, markDone } from './cards';
+import { createCard, markDone, saveCard } from './cards';
 import type { Db } from './db';
 import { listPiles, seedDefaultPiles } from './piles';
 import { searchCards, toFtsQuery } from './search';
@@ -63,5 +63,14 @@ describe('searchCards', () => {
 		await add('Paint the X-wing');
 		const other = await createTestUser(db);
 		expect(await searchCards(db, other, 'paint')).toEqual([]);
+	});
+
+	it('after saveCard, finds the new subtask text and not the removed one', async () => {
+		const id = await add('Paint the X-wing', null, ['prime the hull']);
+		await saveCard(db, userId, id, { title: 'Paint the X-wing', notes: null, pileId }, [
+			{ text: 'weather the panels', done: false }
+		]);
+		expect((await searchCards(db, userId, 'weather')).map((r) => r.id)).toEqual([id]);
+		expect(await searchCards(db, userId, 'prime')).toEqual([]);
 	});
 });

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, gte } from 'drizzle-orm';
 import { MAX_SUBTASKS } from '../limits';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
@@ -89,8 +89,9 @@ async function requireCardId(db: Db, userId: string, cardId: string): Promise<vo
 	if (!card) throw new NotFoundError('card');
 }
 
-// D1 caps a statement at 100 bound parameters; ~5 per row, so insert in small chunks.
-const SUBTASK_INSERT_CHUNK = 15;
+// D1 caps a statement at 100 bound parameters, and every subtask column is bound per row
+// (the id default included), so the chunk size follows the column count.
+const SUBTASK_INSERT_CHUNK = Math.floor(100 / Object.keys(getTableColumns(subtasks)).length);
 
 async function insertSubtasks(
 	db: Db,

@@ -115,10 +115,28 @@ expect_status "POST /api/cards" 201 "$status"
 # 4b. A card with 20 subtasks: the insert must stay under D1's 100-bound-parameter cap,
 #     which better-sqlite3 (dev and tests) doesn't enforce.
 subtasks=$(printf '"step %s",' $(seq 1 20)); subtasks="[${subtasks%,}]"
-status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/api/cards" \
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/many.json" -w '%{http_code}' -X POST "$BASE/api/cards" \
 	-H "$cookie" -H "Origin: $BASE" -H 'Content-Type: application/json' \
 	--data "{\"title\":\"Many steps\",\"notes\":\"\",\"subtasks\":$subtasks,\"pile\":{\"kind\":\"new\",\"name\":\"smoke tests\"}}") || true
 expect_status "POST /api/cards (20 subtasks)" 201 "$status"
+many_id=$(sed -E 's/.*"id":"([^"]+)".*/\1/' "$WORK/many.json")
+[ -n "$many_id" ] || fail "POST /api/cards: no id in $(cat "$WORK/many.json")"
+
+# 4c. Save that card through the card page's form action: one D1 batch replaces its subtasks
+#     and search index row. Then search finds it by a subtask that only the save added.
+pile_id=$(cd "$WORK" && "$WRANGLER" d1 execute butterfly-net-db --local --persist-to "$WORK/state" --json \
+	--command "SELECT pile_id FROM cards WHERE id = '$many_id'" | grep -o '"pile_id": *"[^"]*"' | sed -E 's/.*"([^"]*)"$/\1/')
+[ -n "$pile_id" ] || fail "no pile_id for card $many_id"
+save_args=(--data-urlencode "title=Many steps" --data-urlencode "notes=" --data-urlencode "pileId=$pile_id")
+for n in $(seq 1 19); do save_args+=(--data-urlencode "subtask_text=step $n"); done
+save_args+=(--data-urlencode "subtask_text=zebra crossing")
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/card/$many_id?/save" \
+	-H "$cookie" -H "Origin: $BASE" -H 'Accept: text/html' "${save_args[@]}") || true
+expect_status "POST /card/…?/save (20 subtasks)" 200 "$status"
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/search.html" -w '%{http_code}' -H "$cookie" "$BASE/search?q=zebra") || true
+expect_status "GET /search?q=zebra" 200 "$status"
+grep -qF "Many steps" "$WORK/search.html" || fail "search for a saved subtask didn't find the card"
+echo "ok  search finds the saved subtask"
 
 # 5. The board shows it.
 body="$WORK/home.html"

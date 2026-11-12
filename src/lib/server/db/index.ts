@@ -3,10 +3,11 @@ import { drizzle as drizzleD1 } from 'drizzle-orm/d1';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 import { dev } from '$app/env';
 import * as schema from './schema';
+import { withBatch } from './sqlite-batch';
 
-// Shaped as the async D1 database. Local (better-sqlite3) and test instances are cast to it
-// at creation: drizzle's better-sqlite3 query builders are awaitable, so code written against
-// the async D1 shape runs unchanged locally and in tests.
+// Shaped as the async D1 database. Local (better-sqlite3) and test instances are given this
+// shape by withBatch: drizzle's better-sqlite3 query builders are awaitable, and withBatch adds
+// D1's batch, so code written against the async D1 shape runs unchanged locally and in tests.
 export type Db = DrizzleD1Database<typeof schema>;
 
 let localDb: Db | null = null;
@@ -34,7 +35,7 @@ export async function getDb(d1?: D1Database): Promise<Db> {
 		sqlite.pragma('foreign_keys = ON');
 		// e2e helpers write to the same file from another process; wait rather than fail.
 		sqlite.pragma('busy_timeout = 5000');
-		localDb = drizzle(sqlite, { schema }) as unknown as Db;
+		localDb = withBatch(sqlite, drizzle(sqlite, { schema }));
 	}
 	return localDb;
 }

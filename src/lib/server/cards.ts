@@ -5,7 +5,7 @@ import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError } from './errors';
 import { sameStepText } from './links';
 import { getPile, listPiles, type Pile } from './piles';
-import { reindexCard, removeFromIndex } from './search-index';
+import { ftsDelete, ftsInsert, reindexCard, removeFromIndex } from './search-index';
 
 export interface NewCard {
 	title: string;
@@ -93,25 +93,33 @@ async function requireCardId(db: Db, userId: string, cardId: string): Promise<vo
 // (the id default included), so the chunk size follows the column count.
 const SUBTASK_INSERT_CHUNK = Math.floor(100 / Object.keys(getTableColumns(subtasks)).length);
 
+function subtaskInserts(db: Db, cardId: string, items: SubtaskInput[], firstOrder = 0) {
+	const inserts = [];
+	for (let start = 0; start < items.length; start += SUBTASK_INSERT_CHUNK) {
+		const chunk = items.slice(start, start + SUBTASK_INSERT_CHUNK);
+		inserts.push(
+			db.insert(subtasks).values(
+				chunk.map((item, i) => ({
+					card_id: cardId,
+					text: item.text,
+					done: item.done,
+					url: item.url ?? null,
+					link_title: item.url ? (item.linkTitle ?? null) : null,
+					sort_order: firstOrder + start + i
+				}))
+			)
+		);
+	}
+	return inserts;
+}
+
 async function insertSubtasks(
 	db: Db,
 	cardId: string,
 	items: SubtaskInput[],
 	firstOrder = 0
 ): Promise<void> {
-	for (let start = 0; start < items.length; start += SUBTASK_INSERT_CHUNK) {
-		const chunk = items.slice(start, start + SUBTASK_INSERT_CHUNK);
-		await db.insert(subtasks).values(
-			chunk.map((item, i) => ({
-				card_id: cardId,
-				text: item.text,
-				done: item.done,
-				url: item.url ?? null,
-				link_title: item.url ? (item.linkTitle ?? null) : null,
-				sort_order: firstOrder + start + i
-			}))
-		);
-	}
+	for (const insert of subtaskInserts(db, cardId, items, firstOrder)) await insert;
 }
 
 async function listSubtasks(db: Db, cardId: string, fromOrder = 0): Promise<Subtask[]> {
@@ -177,6 +185,41 @@ export async function updateCard(
 		.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
 		.where(ownCard(userId, cardId));
 	await reindexCard(db, cardId);
+}
+
+/** Saves the card page: title, notes, pile and the full subtask list, all or nothing. */
+export async function saveCard(
+	db: Db,
+	userId: string,
+	cardId: string,
+	edit: CardEdit,
+	items: SubtaskInput[]
+): Promise<void> {
+	const [[card], [pile]] = await db.batch([
+		db.select({ id: cards.id }).from(cards).where(ownCard(userId, cardId)).limit(1),
+		db
+			.select({ id: piles.id })
+			.from(piles)
+			.where(and(eq(piles.id, edit.pileId), eq(piles.user_id, userId)))
+			.limit(1)
+	]);
+	if (!card) throw new NotFoundError('card');
+	if (!pile) throw new NotFoundError('pile');
+
+	await db.batch([
+		db
+			.update(cards)
+			.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
+			.where(ownCard(userId, cardId)),
+		db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
+		...subtaskInserts(db, cardId, items),
+		ftsDelete(db, cardId),
+		ftsInsert(
+			db,
+			{ id: cardId, userId, title: edit.title, notes: edit.notes },
+			items.map((item) => item.text)
+		)
+	]);
 }
 
 /** Moves a card to another of the user's piles; returns the pile it came from, for Undo. */

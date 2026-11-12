@@ -1,12 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
-import {
-	deleteCard,
-	getCard,
-	markDone,
-	reopenCard,
-	setSubtasks,
-	updateCard
-} from '../../../lib/server/cards';
+import { deleteCard, getCard, markDone, reopenCard, saveCard } from '../../../lib/server/cards';
 import { DAILY_PARSE_LIMIT } from '../../../lib/limits';
 import { NotFoundError } from '../../../lib/server/errors';
 import { listPiles } from '../../../lib/server/piles';
@@ -48,10 +41,7 @@ export const actions: Actions = {
 
 		const items = subtaskRowsFromForm(form);
 
-		await orNotFound(async () => {
-			await updateCard(locals.db, user.id, params.id, parsed.data);
-			await setSubtasks(locals.db, user.id, params.id, items);
-		});
+		await orNotFound(() => saveCard(locals.db, user.id, params.id, parsed.data, items));
 		return { saved: true };
 	},
 	done: async ({ locals, params }) => {

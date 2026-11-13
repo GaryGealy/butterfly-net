@@ -137,6 +137,10 @@ status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/search.html" -w '%{http_co
 expect_status "GET /search?q=zebra" 200 "$status"
 grep -qF "Many steps" "$WORK/search.html" || fail "search for a saved subtask didn't find the card"
 echo "ok  search finds the saved subtask"
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/card.html" -w '%{http_code}' -H "$cookie" "$BASE/card/$many_id") || true
+expect_status "GET /card/…" 200 "$status"
+grep -qF "zebra crossing" "$WORK/card.html" || fail "card page doesn't show the saved subtask"
+echo "ok  card page shows the saved subtask"
 
 # 4d. Delete that card: one batch removes its search row, subtasks and the card.
 status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/card/$many_id?/delete" \

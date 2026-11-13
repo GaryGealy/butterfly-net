@@ -4,7 +4,8 @@ import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError } from './errors';
 import { sameStepText } from './links';
-import { getPile, listPiles, type Pile } from './piles';
+import { getPile, pilesQuery, type Pile } from './piles';
+import { parsesTodayQuery } from './usage';
 import type { CaptureSave } from './validation';
 import { ftsDelete, ftsInsert, nextSearchId } from './search-index';
 
@@ -180,8 +181,8 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 	return cardId;
 }
 
-export async function getCard(db: Db, userId: string, cardId: string): Promise<CardDetail | null> {
-	const [row] = await db
+function cardQuery(db: Db, userId: string, cardId: string) {
+	return db
 		.select({
 			id: cards.id,
 			title: cards.title,
@@ -196,9 +197,53 @@ export async function getCard(db: Db, userId: string, cardId: string): Promise<C
 		.innerJoin(piles, eq(cards.pile_id, piles.id))
 		.where(ownCard(userId, cardId))
 		.limit(1);
-	if (!row) return null;
+}
 
-	return { ...row, subtasks: await listSubtasks(db, cardId) };
+/** The card's subtasks, empty unless the user owns the card. */
+function ownSubtasks(db: Db, userId: string, cardId: string) {
+	return db
+		.select({
+			id: subtasks.id,
+			text: subtasks.text,
+			done: subtasks.done,
+			url: subtasks.url,
+			linkTitle: subtasks.link_title
+		})
+		.from(subtasks)
+		.innerJoin(cards, eq(subtasks.card_id, cards.id))
+		.where(ownCard(userId, cardId))
+		.orderBy(asc(subtasks.sort_order));
+}
+
+export async function getCard(db: Db, userId: string, cardId: string): Promise<CardDetail | null> {
+	const [[row], items] = await db.batch([
+		cardQuery(db, userId, cardId),
+		ownSubtasks(db, userId, cardId)
+	]);
+	return row ? { ...row, subtasks: items } : null;
+}
+
+export interface CardPageData {
+	card: CardDetail;
+	piles: Pile[];
+	/** Claude sorts the user has asked for today. */
+	used: number;
+}
+
+/** Everything the card page loads, in one round trip. */
+export async function cardPageData(
+	db: Db,
+	userId: string,
+	cardId: string
+): Promise<CardPageData | null> {
+	const [[row], items, pileList, [usage]] = await db.batch([
+		cardQuery(db, userId, cardId),
+		ownSubtasks(db, userId, cardId),
+		pilesQuery(db, userId),
+		parsesTodayQuery(db, userId)
+	]);
+	if (!row) return null;
+	return { card: { ...row, subtasks: items }, piles: pileList, used: usage?.count ?? 0 };
 }
 
 /** Saves the card page: title, notes, pile and the full subtask list, all or nothing. */
@@ -334,17 +379,19 @@ export async function deleteCard(db: Db, userId: string, cardId: string): Promis
 }
 
 export async function listActiveCardsByPile(db: Db, userId: string): Promise<PileWithCards[]> {
-	const pileList = await listPiles(db, userId);
-	const active = await db
-		.select({
-			id: cards.id,
-			title: cards.title,
-			pile_id: cards.pile_id,
-			created_at: cards.created_at
-		})
-		.from(cards)
-		.where(and(eq(cards.user_id, userId), eq(cards.status, 'active')))
-		.orderBy(desc(cards.created_at));
+	const [pileList, active] = await db.batch([
+		pilesQuery(db, userId),
+		db
+			.select({
+				id: cards.id,
+				title: cards.title,
+				pile_id: cards.pile_id,
+				created_at: cards.created_at
+			})
+			.from(cards)
+			.where(and(eq(cards.user_id, userId), eq(cards.status, 'active')))
+			.orderBy(desc(cards.created_at))
+	]);
 
 	return pileList.map((pile) => ({
 		...pile,

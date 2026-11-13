@@ -29,12 +29,17 @@ export async function seedDefaultPiles(db: Db, userId: string): Promise<void> {
 		.values(DEFAULT_PILES.map((name, i) => ({ user_id: userId, name, sort_order: i })));
 }
 
-export async function listPiles(db: Db, userId: string): Promise<Pile[]> {
+/** The user's piles in board order, as a builder so it can go in a batch. */
+export function pilesQuery(db: Db, userId: string) {
 	return db
 		.select(pileColumns)
 		.from(piles)
 		.where(eq(piles.user_id, userId))
 		.orderBy(asc(piles.sort_order));
+}
+
+export async function listPiles(db: Db, userId: string): Promise<Pile[]> {
+	return pilesQuery(db, userId);
 }
 
 export async function listPilesWithCounts(db: Db, userId: string): Promise<PileWithCount[]> {
@@ -111,8 +116,11 @@ export async function movePile(
 	const j = direction === 'up' ? i - 1 : i + 1;
 	if (j < 0 || j >= all.length) return;
 
-	await db.update(piles).set({ sort_order: all[j].sort_order }).where(eq(piles.id, all[i].id));
-	await db.update(piles).set({ sort_order: all[i].sort_order }).where(eq(piles.id, all[j].id));
+	const ownPile = (id: string) => and(eq(piles.id, id), eq(piles.user_id, userId));
+	await db.batch([
+		db.update(piles).set({ sort_order: all[j].sort_order }).where(ownPile(all[i].id)),
+		db.update(piles).set({ sort_order: all[i].sort_order }).where(ownPile(all[j].id))
+	]);
 }
 
 export async function deletePile(
@@ -121,23 +129,37 @@ export async function deletePile(
 	pileId: string,
 	reassignToPileId?: string
 ): Promise<void> {
-	const pile = await getPile(db, userId, pileId);
+	const ownPile = (id: string) => and(eq(piles.id, id), eq(piles.user_id, userId));
+	const [[pile], [{ piles: pileCount }], [{ n }], [target]] = await db.batch([
+		db.select({ id: piles.id }).from(piles).where(ownPile(pileId)).limit(1),
+		db.select({ piles: count() }).from(piles).where(eq(piles.user_id, userId)),
+		// Counts archived cards too: they still reference this pile.
+		db
+			.select({ n: count() })
+			.from(cards)
+			.where(and(eq(cards.pile_id, pileId), eq(cards.user_id, userId))),
+		db
+			.select({ id: piles.id })
+			.from(piles)
+			.where(ownPile(reassignToPileId ?? ''))
+			.limit(1)
+	]);
 	if (!pile) throw new NotFoundError('pile');
-
 	// Captures need somewhere to land, and the preview can't create a pile when Claude is down.
-	const [{ piles: pileCount }] = await db
-		.select({ piles: count() })
-		.from(piles)
-		.where(eq(piles.user_id, userId));
 	if (pileCount <= 1) throw new LastPileError();
 
-	// Counts archived cards too: they still reference this pile.
-	const [{ n }] = await db.select({ n: count() }).from(cards).where(eq(cards.pile_id, pileId));
-	if (n > 0) {
-		if (!reassignToPileId || reassignToPileId === pileId) throw new PileNotEmptyError(n);
-		const target = await getPile(db, userId, reassignToPileId);
-		if (!target) throw new NotFoundError('pile');
-		await db.update(cards).set({ pile_id: target.id }).where(eq(cards.pile_id, pileId));
+	const deletePileRow = db.delete(piles).where(ownPile(pileId));
+	if (n === 0) {
+		await deletePileRow;
+		return;
 	}
-	await db.delete(piles).where(eq(piles.id, pileId));
+	if (!reassignToPileId || reassignToPileId === pileId) throw new PileNotEmptyError(n);
+	if (!target) throw new NotFoundError('pile');
+	await db.batch([
+		db
+			.update(cards)
+			.set({ pile_id: target.id })
+			.where(and(eq(cards.pile_id, pileId), eq(cards.user_id, userId))),
+		deletePileRow
+	]);
 }

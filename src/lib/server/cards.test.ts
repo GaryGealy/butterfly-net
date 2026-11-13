@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { sql } from 'drizzle-orm';
 import {
 	appendSubtasks,
+	cardPageData,
 	createCard,
 	deleteCard,
 	getCard,
@@ -19,6 +20,9 @@ import { NotFoundError } from './errors';
 import { listPiles, seedDefaultPiles, type Pile } from './piles';
 import { searchCards } from './search';
 import { createTestDb, createTestUser } from './test/db';
+import { countParse } from './usage';
+
+const newId = () => crypto.randomUUID();
 
 let db: Db;
 let userId: string;
@@ -121,6 +125,18 @@ describe('createCard and getCard', () => {
 			await countRows('subtasks'),
 			await countRows('cards_fts')
 		]).toEqual(before);
+	});
+
+	it("cardPageData returns the card, its subtasks, every pile and today's sorts used", async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['Buy latch'] }));
+		await countParse(db, userId);
+		await countParse(db, userId);
+		const data = await cardPageData(db, userId, id);
+		expect(data?.card).toEqual(await getCard(db, userId, id));
+		expect(data?.piles).toEqual(await listPiles(db, userId));
+		expect(data?.used).toBe(2);
+		expect(await cardPageData(db, userId, newId())).toBeNull();
+		expect(await cardPageData(db, await createTestUser(db), id)).toBeNull();
 	});
 
 	it("returns null for another user's card", async () => {

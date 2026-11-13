@@ -63,23 +63,33 @@ export const cards = sqliteTable(
 			.notNull()
 			.default('active'),
 		created_at: createdAt(),
-		done_at: integer('done_at', { mode: 'timestamp_ms' })
+		done_at: integer('done_at', { mode: 'timestamp_ms' }),
+		/** The card's rowid in cards_fts. */
+		search_id: integer('search_id')
 	},
-	(t) => [index('cards_user_status_idx').on(t.user_id, t.status)]
+	(t) => [
+		index('cards_user_status_idx').on(t.user_id, t.status),
+		index('cards_pile_idx').on(t.pile_id),
+		uniqueIndex('cards_search_id_idx').on(t.search_id)
+	]
 );
 
-export const subtasks = sqliteTable('subtasks', {
-	id: id(),
-	card_id: text('card_id')
-		.notNull()
-		.references(() => cards.id, { onDelete: 'cascade' }),
-	text: text('text').notNull(),
-	done: integer('done', { mode: 'boolean' }).notNull().default(false),
-	/** An http(s) link from Break it down, verified against that request's web search results. */
-	url: text('url'),
-	link_title: text('link_title'),
-	sort_order: integer('sort_order').notNull()
-});
+export const subtasks = sqliteTable(
+	'subtasks',
+	{
+		id: id(),
+		card_id: text('card_id')
+			.notNull()
+			.references(() => cards.id, { onDelete: 'cascade' }),
+		text: text('text').notNull(),
+		done: integer('done', { mode: 'boolean' }).notNull().default(false),
+		/** An http(s) link from Break it down, verified against that request's web search results. */
+		url: text('url'),
+		link_title: text('link_title'),
+		sort_order: integer('sort_order').notNull()
+	},
+	(t) => [index('subtasks_card_order_idx').on(t.card_id, t.sort_order)]
+);
 
 export const invites = sqliteTable('invites', {
 	id: id(),

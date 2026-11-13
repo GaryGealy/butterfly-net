@@ -5,7 +5,7 @@ import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError } from './errors';
 import { sameStepText } from './links';
 import { getPile, listPiles, type Pile } from './piles';
-import { ftsDelete, ftsInsert, reindexCard, removeFromIndex } from './search-index';
+import { ftsDelete, ftsInsert, nextSearchId, reindexCard, removeFromIndex } from './search-index';
 
 export interface NewCard {
 	title: string;
@@ -140,7 +140,13 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 	const pile = await requirePile(db, userId, input.pileId);
 	const [card] = await db
 		.insert(cards)
-		.values({ user_id: userId, pile_id: pile.id, title: input.title, notes: input.notes })
+		.values({
+			user_id: userId,
+			pile_id: pile.id,
+			title: input.title,
+			notes: input.notes,
+			search_id: nextSearchId
+		})
 		.returning({ id: cards.id });
 	await insertSubtasks(
 		db,

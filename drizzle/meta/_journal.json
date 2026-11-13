@@ -29,6 +29,20 @@
       "when": 1794177153584,
       "tag": "0003_naive_true_believers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794583768457,
+      "tag": "0004_wakeful_trauma",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794583769978,
+      "tag": "0005_cards_search_rebuild",
+      "breakpoints": true
     }
   ]
 }

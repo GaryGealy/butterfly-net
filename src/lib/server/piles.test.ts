@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from './db';
+import { eq } from 'drizzle-orm';
 import { cards } from './db/schema';
 import { DuplicatePileError, LastPileError, NotFoundError, PileNotEmptyError } from './errors';
 import {
@@ -81,6 +82,25 @@ describe('movePile', () => {
 		expect(after.slice(0, 2)).toEqual(['work stuff', 'house']);
 	});
 
+	it("movePile swaps two neighbours' sort_order", async () => {
+		const before = await listPiles(db, userId);
+		await movePile(db, userId, before[2].id, 'down');
+		const after = await listPiles(db, userId);
+		expect(after.map((p) => [p.name, p.sort_order])).toEqual([
+			['house', 0],
+			['work stuff', 1],
+			['video games', 2],
+			['ideas', 3],
+			['model building', 4]
+		]);
+	});
+
+	it("treats another user's pile as not found", async () => {
+		const [house] = await listPiles(db, userId);
+		const other = await createTestUser(db);
+		await expect(movePile(db, other, house.id, 'down')).rejects.toThrow(NotFoundError);
+	});
+
 	it('does nothing when moving past either end', async () => {
 		const before = await listPiles(db, userId);
 		await movePile(db, userId, before[0].id, 'up');
@@ -120,6 +140,44 @@ describe('deletePile', () => {
 		await deletePile(db, userId, house.id, work.id);
 		const counts = await listPilesWithCounts(db, userId);
 		expect(counts.find((p) => p.id === work.id)?.card_count).toBe(2);
+	});
+
+	it('deletePile with reassignment moves every card (active and done) and deletes the pile together', async () => {
+		const [house, work] = await listPiles(db, userId);
+		await addCard(house.id, 'active');
+		await addCard(house.id, 'done');
+		await addCard(work.id, 'active');
+		await deletePile(db, userId, house.id, work.id);
+		expect((await listPiles(db, userId)).map((p) => p.id)).not.toContain(house.id);
+		const moved = await db
+			.select({ pile_id: cards.pile_id, status: cards.status })
+			.from(cards)
+			.where(eq(cards.user_id, userId));
+		expect(moved.map((c) => c.pile_id)).toEqual([work.id, work.id, work.id]);
+		expect(moved.map((c) => c.status).sort()).toEqual(['active', 'active', 'done']);
+	});
+
+	it('deletePile still throws LastPileError, PileNotEmptyError and NotFoundError as before', async () => {
+		const [house, work] = await listPiles(db, userId);
+		await addCard(house.id);
+		const other = await createTestUser(db);
+		await seedDefaultPiles(db, other);
+		const theirs = await listPiles(db, other);
+
+		await expect(deletePile(db, userId, theirs[0].id)).rejects.toThrow(NotFoundError);
+		await expect(deletePile(db, userId, 'no-such-pile', work.id)).rejects.toThrow(NotFoundError);
+		await expect(deletePile(db, userId, house.id)).rejects.toThrow(PileNotEmptyError);
+		await expect(deletePile(db, userId, house.id, house.id)).rejects.toThrow(PileNotEmptyError);
+		await expect(deletePile(db, userId, house.id, 'no-such-pile')).rejects.toThrow(NotFoundError);
+		await expect(deletePile(db, userId, house.id, theirs[1].id)).rejects.toThrow(NotFoundError);
+		expect(await listPiles(db, userId)).toHaveLength(5);
+		expect(await listPiles(db, other)).toHaveLength(5);
+
+		for (const pile of theirs.slice(1)) await deletePile(db, other, pile.id);
+		// The last-pile check comes before the card count, so a last pile with cards says "last".
+		await addCard(theirs[0].id);
+		await db.update(cards).set({ user_id: other }).where(eq(cards.pile_id, theirs[0].id));
+		await expect(deletePile(db, other, theirs[0].id, work.id)).rejects.toThrow(LastPileError);
 	});
 
 	it("rejects another user's pile as the target", async () => {

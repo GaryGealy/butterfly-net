@@ -22,10 +22,15 @@ export async function countParse(db: Db, userId: string, now = new Date()): Prom
 
 /** How many Claude sorts the user has asked for today, without counting one. */
 export async function parsesToday(db: Db, userId: string, now = new Date()): Promise<number> {
-	const [row] = await db
+	const [row] = await parsesTodayQuery(db, userId, now);
+	return row?.count ?? 0;
+}
+
+/** Today's usage row for the user (none if they haven't sorted today), as a batchable builder. */
+export function parsesTodayQuery(db: Db, userId: string, now = new Date()) {
+	return db
 		.select({ count: parseUsage.count })
 		.from(parseUsage)
 		.where(and(eq(parseUsage.user_id, userId), eq(parseUsage.day, usageDay(now))))
 		.limit(1);
-	return row?.count ?? 0;
 }

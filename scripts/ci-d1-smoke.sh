@@ -138,6 +138,15 @@ expect_status "GET /search?q=zebra" 200 "$status"
 grep -qF "Many steps" "$WORK/search.html" || fail "search for a saved subtask didn't find the card"
 echo "ok  search finds the saved subtask"
 
+# 4d. Delete that card: one batch removes its search row, subtasks and the card.
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -w '%{http_code}' -X POST "$BASE/card/$many_id?/delete" \
+	-H "$cookie" -H "Origin: $BASE" -H 'Accept: text/html' --data '') || true
+expect_status "POST /card/…?/delete" 303 "$status"
+status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/search.html" -w '%{http_code}' -H "$cookie" "$BASE/search?q=zebra") || true
+expect_status "GET /search?q=zebra (after delete)" 200 "$status"
+! grep -qF "Many steps" "$WORK/search.html" || fail "search still finds the deleted card"
+echo "ok  search no longer finds the deleted card"
+
 # 5. The board shows it.
 body="$WORK/home.html"
 status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$body" -w '%{http_code}' -H "$cookie" "$BASE/") || true

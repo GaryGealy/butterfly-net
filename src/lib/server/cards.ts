@@ -1,17 +1,19 @@
-import { and, asc, desc, eq, getTableColumns, gte } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, gte, sql } from 'drizzle-orm';
 import { MAX_SUBTASKS } from '../limits';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError } from './errors';
 import { sameStepText } from './links';
 import { getPile, listPiles, type Pile } from './piles';
-import { ftsDelete, ftsInsert, nextSearchId, reindexCard, removeFromIndex } from './search-index';
+import type { CaptureSave } from './validation';
+import { ftsDelete, ftsInsert, nextSearchId } from './search-index';
 
 export interface NewCard {
 	title: string;
 	notes: string | null;
-	pileId: string;
 	subtasks: string[];
+	/** An existing pile, or a new one; a "new" name matching a pile in any case reuses it. */
+	pile: CaptureSave['pile'];
 }
 
 export interface CardEdit {
@@ -80,15 +82,6 @@ async function requirePile(db: Db, userId: string, pileId: string): Promise<Pile
 	return pile;
 }
 
-async function requireCardId(db: Db, userId: string, cardId: string): Promise<void> {
-	const [card] = await db
-		.select({ id: cards.id })
-		.from(cards)
-		.where(ownCard(userId, cardId))
-		.limit(1);
-	if (!card) throw new NotFoundError('card');
-}
-
 // D1 caps a statement at 100 bound parameters, and every subtask column is bound per row
 // (the id default included), so the chunk size follows the column count.
 const SUBTASK_INSERT_CHUNK = Math.floor(100 / Object.keys(getTableColumns(subtasks)).length);
@@ -113,16 +106,7 @@ function subtaskInserts(db: Db, cardId: string, items: SubtaskInput[], firstOrde
 	return inserts;
 }
 
-async function insertSubtasks(
-	db: Db,
-	cardId: string,
-	items: SubtaskInput[],
-	firstOrder = 0
-): Promise<void> {
-	for (const insert of subtaskInserts(db, cardId, items, firstOrder)) await insert;
-}
-
-async function listSubtasks(db: Db, cardId: string, fromOrder = 0): Promise<Subtask[]> {
+function listSubtasks(db: Db, cardId: string, fromOrder = 0) {
 	return db
 		.select({
 			id: subtasks.id,
@@ -136,25 +120,64 @@ async function listSubtasks(db: Db, cardId: string, fromOrder = 0): Promise<Subt
 		.orderBy(asc(subtasks.sort_order));
 }
 
+const ownedPile = (db: Db, userId: string, pileId: string) =>
+	db
+		.select({ id: piles.id })
+		.from(piles)
+		.where(and(eq(piles.id, pileId), eq(piles.user_id, userId)))
+		.limit(1);
+
 export async function createCard(db: Db, userId: string, input: NewCard): Promise<string> {
-	const pile = await requirePile(db, userId, input.pileId);
-	const [card] = await db
-		.insert(cards)
-		.values({
-			user_id: userId,
-			pile_id: pile.id,
-			title: input.title,
-			notes: input.notes,
-			search_id: nextSearchId
-		})
-		.returning({ id: cards.id });
-	await insertSubtasks(
-		db,
-		card.id,
-		input.subtasks.map((text) => ({ text, done: false }))
-	);
-	await reindexCard(db, card.id);
-	return card.id;
+	let pileId: string;
+	let newPile: { id: string; name: string; sort_order: number } | null = null;
+	if (input.pile.kind === 'existing') {
+		const [pile] = await ownedPile(db, userId, input.pile.id);
+		if (!pile) throw new NotFoundError('pile');
+		pileId = pile.id;
+	} else {
+		const name = input.pile.name.trim();
+		const [[match], [{ max }]] = await db.batch([
+			db
+				.select({ id: piles.id })
+				.from(piles)
+				.where(and(eq(piles.user_id, userId), sql`lower(${piles.name}) = lower(${name})`))
+				.limit(1),
+			db
+				.select({ max: sql<number | null>`max(${piles.sort_order})` })
+				.from(piles)
+				.where(eq(piles.user_id, userId))
+		]);
+		if (match) {
+			pileId = match.id;
+		} else {
+			newPile = { id: crypto.randomUUID(), name, sort_order: (max ?? -1) + 1 };
+			pileId = newPile.id;
+		}
+	}
+
+	const cardId = crypto.randomUUID();
+	const cardInsert = db.insert(cards).values({
+		id: cardId,
+		user_id: userId,
+		pile_id: pileId,
+		title: input.title,
+		notes: input.notes,
+		search_id: nextSearchId
+	});
+	const rest = [
+		...subtaskInserts(
+			db,
+			cardId,
+			input.subtasks.map((text) => ({ text, done: false }))
+		),
+		ftsInsert(db, { id: cardId, userId, title: input.title, notes: input.notes }, input.subtasks)
+	];
+	if (newPile) {
+		await db.batch([db.insert(piles).values({ ...newPile, user_id: userId }), cardInsert, ...rest]);
+	} else {
+		await db.batch([cardInsert, ...rest]);
+	}
+	return cardId;
 }
 
 export async function getCard(db: Db, userId: string, cardId: string): Promise<CardDetail | null> {
@@ -178,21 +201,6 @@ export async function getCard(db: Db, userId: string, cardId: string): Promise<C
 	return { ...row, subtasks: await listSubtasks(db, cardId) };
 }
 
-export async function updateCard(
-	db: Db,
-	userId: string,
-	cardId: string,
-	edit: CardEdit
-): Promise<void> {
-	await requireCardId(db, userId, cardId);
-	const pile = await requirePile(db, userId, edit.pileId);
-	await db
-		.update(cards)
-		.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
-		.where(ownCard(userId, cardId));
-	await reindexCard(db, cardId);
-}
-
 /** Saves the card page: title, notes, pile and the full subtask list, all or nothing. */
 export async function saveCard(
 	db: Db,
@@ -203,11 +211,7 @@ export async function saveCard(
 ): Promise<void> {
 	const [[card], [pile]] = await db.batch([
 		db.select({ id: cards.id }).from(cards).where(ownCard(userId, cardId)).limit(1),
-		db
-			.select({ id: piles.id })
-			.from(piles)
-			.where(and(eq(piles.id, edit.pileId), eq(piles.user_id, userId)))
-			.limit(1)
+		ownedPile(db, userId, edit.pileId)
 	]);
 	if (!card) throw new NotFoundError('card');
 	if (!pile) throw new NotFoundError('pile');
@@ -246,18 +250,6 @@ export async function moveCard(
 	return card.pile_id;
 }
 
-export async function setSubtasks(
-	db: Db,
-	userId: string,
-	cardId: string,
-	items: SubtaskInput[]
-): Promise<void> {
-	await requireCardId(db, userId, cardId);
-	await db.delete(subtasks).where(eq(subtasks.card_id, cardId));
-	await insertSubtasks(db, cardId, items);
-	await reindexCard(db, cardId);
-}
-
 /**
  * Adds steps after a card's subtasks, not done. Steps that repeat an existing subtask or an
  * earlier step are skipped, and only as many as fit under MAX_SUBTASKS are kept. Returns only
@@ -269,8 +261,20 @@ export async function appendSubtasks(
 	cardId: string,
 	steps: NewStep[]
 ): Promise<Subtask[]> {
-	await requireCardId(db, userId, cardId);
-	const existing = await listSubtasks(db, cardId);
+	const [[card], existing] = await db.batch([
+		db
+			.select({ title: cards.title, notes: cards.notes })
+			.from(cards)
+			.where(ownCard(userId, cardId))
+			.limit(1),
+		db
+			.select({ text: subtasks.text, sort_order: subtasks.sort_order })
+			.from(subtasks)
+			.where(eq(subtasks.card_id, cardId))
+			.orderBy(asc(subtasks.sort_order))
+	]);
+	if (!card) throw new NotFoundError('card');
+
 	const seen = existing.map((s) => s.text);
 	const fresh: SubtaskInput[] = [];
 	for (const step of steps) {
@@ -282,16 +286,17 @@ export async function appendSubtasks(
 	const kept = fresh.slice(0, room);
 	if (kept.length === 0) return [];
 
-	const [last] = await db
-		.select({ sort_order: subtasks.sort_order })
-		.from(subtasks)
-		.where(eq(subtasks.card_id, cardId))
-		.orderBy(desc(subtasks.sort_order))
-		.limit(1);
-	const firstOrder = last ? last.sort_order + 1 : 0;
-	await insertSubtasks(db, cardId, kept, firstOrder);
-	await reindexCard(db, cardId);
-	return listSubtasks(db, cardId, firstOrder);
+	const firstOrder = existing.length > 0 ? existing[existing.length - 1].sort_order + 1 : 0;
+	const [, ...results] = await db.batch([
+		ftsDelete(db, cardId),
+		ftsInsert(db, { id: cardId, userId, title: card.title, notes: card.notes }, [
+			...existing.map((s) => s.text),
+			...kept.map((s) => s.text)
+		]),
+		...subtaskInserts(db, cardId, kept, firstOrder),
+		listSubtasks(db, cardId, firstOrder)
+	]);
+	return results.at(-1) as Subtask[];
 }
 
 async function setStatus(
@@ -315,10 +320,17 @@ export const reopenCard = (db: Db, userId: string, cardId: string) =>
 	setStatus(db, userId, cardId, 'active');
 
 export async function deleteCard(db: Db, userId: string, cardId: string): Promise<void> {
-	await requireCardId(db, userId, cardId);
-	await removeFromIndex(db, cardId);
-	await db.delete(subtasks).where(eq(subtasks.card_id, cardId));
-	await db.delete(cards).where(ownCard(userId, cardId));
+	const [card] = await db
+		.select({ id: cards.id })
+		.from(cards)
+		.where(ownCard(userId, cardId))
+		.limit(1);
+	if (!card) throw new NotFoundError('card');
+	await db.batch([
+		ftsDelete(db, cardId),
+		db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
+		db.delete(cards).where(ownCard(userId, cardId))
+	]);
 }
 
 export async function listActiveCardsByPile(db: Db, userId: string): Promise<PileWithCards[]> {

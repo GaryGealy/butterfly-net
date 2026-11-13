@@ -20,7 +20,7 @@ beforeEach(async () => {
 });
 
 const add = (title: string, notes: string | null = null, subtasks: string[] = []) =>
-	createCard(db, userId, { title, notes, pileId, subtasks });
+	createCard(db, userId, { title, notes, subtasks, pile: { kind: 'existing', id: pileId } });
 
 describe('toFtsQuery', () => {
 	it('turns words into quoted prefix terms', () => {

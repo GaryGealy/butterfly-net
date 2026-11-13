@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createCard, markDone, saveCard } from './cards';
+import { sql } from 'drizzle-orm';
+import { appendSubtasks, createCard, markDone, saveCard } from './cards';
 import type { Db } from './db';
+import { allSql } from './db/raw';
+import { cards } from './db/schema';
 import { listPiles, seedDefaultPiles } from './piles';
 import { searchCards, toFtsQuery } from './search';
 import { createTestDb, createTestUser } from './test/db';
@@ -72,5 +75,35 @@ describe('searchCards', () => {
 		]);
 		expect((await searchCards(db, userId, 'weather')).map((r) => r.id)).toEqual([id]);
 		expect(await searchCards(db, userId, 'prime')).toEqual([]);
+	});
+
+	it('each card has exactly one cards_fts row after create, save, save again, and append', async () => {
+		const id = await add('Paint the X-wing', null, ['prime the hull']);
+		const edit = { title: 'Paint the X-wing', notes: null, pileId };
+		await saveCard(db, userId, id, edit, [{ text: 'weather the panels', done: false }]);
+		await saveCard(db, userId, id, edit, [{ text: 'seal the decals', done: false }]);
+		await appendSubtasks(db, userId, id, [{ text: 'mount on base', url: null, linkTitle: null }]);
+
+		const rows = await allSql<{ subtasks: string }>(
+			db,
+			sql`SELECT subtasks FROM cards_fts WHERE card_id = ${id}`
+		);
+		expect(rows).toEqual([{ subtasks: 'seal the decals\nmount on base' }]);
+		expect((await searchCards(db, userId, 'mount')).map((r) => r.id)).toEqual([id]);
+	});
+
+	it('new cards get increasing, unique search_ids', async () => {
+		const ids = [await add('one'), await add('two'), await add('three')];
+		const rows = await db
+			.select({ id: cards.id, search_id: cards.search_id })
+			.from(cards)
+			.orderBy(cards.search_id);
+		expect(rows.map((r) => r.id)).toEqual(ids);
+		expect(rows.map((r) => r.search_id)).toEqual([1, 2, 3]);
+		const fts = await allSql<{ rowid: number; card_id: string }>(
+			db,
+			sql`SELECT rowid, card_id FROM cards_fts ORDER BY rowid`
+		);
+		expect(fts).toEqual(rows.map((r) => ({ rowid: r.search_id, card_id: r.id })));
 	});
 });

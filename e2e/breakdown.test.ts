@@ -58,6 +58,20 @@ test('a failed breakdown adds nothing', async ({ page }) => {
 	await expect(page.getByLabel('Subtask 1', { exact: true })).toHaveCount(0);
 });
 
+test('a failed breakdown gives its sort back', async ({ page }) => {
+	const email = await signUp(page);
+	await capture(page, '[fail] Learn graphs', 'house');
+	seedParseUsage(email, 19);
+	await openCard(page, '[fail] Learn graphs');
+
+	await page.getByRole('button', { name: 'Break it down' }).click();
+	await expect(page.getByRole('alert')).toHaveText(
+		"Couldn't break this down right now. Try again later."
+	);
+	await expect(page.getByRole('button', { name: 'Break it down' })).toBeEnabled();
+	await expect(page.getByText("You're out of sorts for today.")).toHaveCount(0);
+});
+
 test('out of sorts, the button says so before it is pressed', async ({ page }) => {
 	const email = await signUp(page);
 	await capture(page, 'Learn about graphs');

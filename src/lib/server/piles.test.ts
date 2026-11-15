@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from './db';
 import { eq } from 'drizzle-orm';
-import { cards } from './db/schema';
+import { cards, piles } from './db/schema';
 import { DuplicatePileError, LastPileError, NotFoundError, PileNotEmptyError } from './errors';
 import {
 	DEFAULT_PILES,
@@ -14,7 +14,7 @@ import {
 	renamePile,
 	seedDefaultPiles
 } from './piles';
-import { createTestDb, createTestUser } from './test/db';
+import { beforeBatch, createTestDb, createTestUser } from './test/db';
 
 let db: Db;
 let userId: string;
@@ -155,6 +155,16 @@ describe('deletePile', () => {
 			.where(eq(cards.user_id, userId));
 		expect(moved.map((c) => c.pile_id)).toEqual([work.id, work.id, work.id]);
 		expect(moved.map((c) => c.status).sort()).toEqual(['active', 'active', 'done']);
+	});
+
+	it('deletePile throws NotFoundError when the target pile is deleted meanwhile, and changes nothing', async () => {
+		const [house, work] = await listPiles(db, userId);
+		await addCard(house.id);
+		beforeBatch(db, 2, () => db.delete(piles).where(eq(piles.id, work.id)));
+		await expect(deletePile(db, userId, house.id, work.id)).rejects.toThrow(NotFoundError);
+		expect((await listPilesWithCounts(db, userId)).find((p) => p.id === house.id)?.card_count).toBe(
+			1
+		);
 	});
 
 	it('deletePile still throws LastPileError, PileNotEmptyError and NotFoundError as before', async () => {

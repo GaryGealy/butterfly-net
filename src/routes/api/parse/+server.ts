@@ -6,7 +6,7 @@ import { getParseClient } from '../../../lib/server/parse/client';
 import { fallbackResult, parseCapture } from '../../../lib/server/parse/parse';
 import { listPiles } from '../../../lib/server/piles';
 import { requireUser } from '../../../lib/server/routes';
-import { countParse } from '../../../lib/server/usage';
+import { countParse, refundParse } from '../../../lib/server/usage';
 import type { ParseResult } from '../../../lib/types';
 import type { RequestHandler } from './$types';
 
@@ -19,11 +19,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	// Admins aren't counted. Everyone else gets DAILY_PARSE_LIMIT sorts a UTC day; past that the
 	// capture still works, without Claude.
-	if (!locals.isAdmin && (await countParse(locals.db, user.id)) > DAILY_PARSE_LIMIT) {
+	const now = new Date();
+	if (!locals.isAdmin && (await countParse(locals.db, user.id, now)) > DAILY_PARSE_LIMIT) {
 		return json({ ...fallbackResult(body.data.text), source: 'limit' } satisfies ParseResult);
 	}
 
 	const piles = await listPiles(locals.db, user.id);
 	const client = getParseClient(env.ANTHROPIC_API_KEY);
-	return json(await parseCapture(client, body.data.text, piles));
+	const result = await parseCapture(client, body.data.text, piles);
+	// A fallback preview means Claude didn't sort it, so the sort isn't spent.
+	if (!locals.isAdmin && result.source !== 'claude') await refundParse(locals.db, user.id, now);
+	return json(result);
 };

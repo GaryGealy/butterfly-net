@@ -27,3 +27,18 @@ export class LastPileError extends Error {
 		this.name = 'LastPileError';
 	}
 }
+
+/**
+ * Runs a write that depends on rows read earlier. A foreign-key failure means another request
+ * deleted one of them in between, so it surfaces as NotFoundError rather than a 500.
+ */
+export async function notFoundIfGone<T>(write: Promise<T>, what: string): Promise<T> {
+	try {
+		return await write;
+	} catch (e) {
+		for (let err: unknown = e; err instanceof Error; err = err.cause) {
+			if (err.message.includes('FOREIGN KEY constraint failed')) throw new NotFoundError(what);
+		}
+		throw e;
+	}
+}

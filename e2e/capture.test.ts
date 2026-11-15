@@ -183,6 +183,22 @@ test.describe('daily allowance', () => {
 		);
 	});
 
+	test('a sort that falls back because the AI is down is given back', async ({ page }) => {
+		await logOut(page);
+		const email = await signUp(page);
+		seedParseUsage(email, 19);
+
+		await page.getByLabel('Catch a thought').fill('[fail] Call the plumber');
+		await page.getByRole('button', { name: 'Catch' }).click();
+		const preview = page.getByRole('form', { name: 'Card preview' });
+		await expect(preview.getByRole('status')).toContainText("Couldn't sort this one automatically");
+		await preview.getByRole('button', { name: 'Cancel' }).click();
+
+		await page.getByLabel('Catch a thought').fill('Paint the X-wing');
+		await page.getByRole('button', { name: 'Catch' }).click();
+		await expect(preview).toContainText('AI thinks this belongs on model building.');
+	});
+
 	test("admins aren't counted toward the allowance", async ({ page }) => {
 		await logOut(page);
 		await signInAsAdmin(page, 'admin-3@e2e.test');

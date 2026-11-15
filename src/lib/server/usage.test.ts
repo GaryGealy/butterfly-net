@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Db } from './db';
 import { createTestDb, createTestUser } from './test/db';
-import { countParse, parsesToday, usageDay } from './usage';
+import { DAILY_PARSE_LIMIT } from '../limits';
+import { countParse, parsesToday, refundParse, usageDay } from './usage';
 
 let db: Db;
 let userId: string;
@@ -37,6 +38,45 @@ describe('countParse', () => {
 		await countParse(db, userId, now);
 		await countParse(db, userId, now);
 		expect(await countParse(db, other, now)).toBe(1);
+	});
+});
+
+describe('countParse past the limit', () => {
+	it('stops counting once past the limit, so blocked sorts leave the stored count alone', async () => {
+		const now = new Date('2026-11-02T10:00:00Z');
+		const counts = [];
+		for (let i = 0; i < DAILY_PARSE_LIMIT + 4; i++) counts.push(await countParse(db, userId, now));
+		expect(counts.slice(DAILY_PARSE_LIMIT)).toEqual(Array(4).fill(DAILY_PARSE_LIMIT + 1));
+		expect(await parsesToday(db, userId, now)).toBe(DAILY_PARSE_LIMIT + 1);
+	});
+});
+
+describe('refundParse', () => {
+	it('gives back one sort on the day it was counted', async () => {
+		const now = new Date('2026-11-02T10:00:00Z');
+		await countParse(db, userId, now);
+		await countParse(db, userId, now);
+		await refundParse(db, userId, now);
+		expect(await parsesToday(db, userId, now)).toBe(1);
+	});
+
+	it('refunds the day the sort was counted, even after midnight', async () => {
+		const counted = new Date('2026-11-02T23:59:59Z');
+		const next = new Date('2026-11-03T00:00:01Z');
+		await countParse(db, userId, counted);
+		await countParse(db, userId, next);
+		await refundParse(db, userId, counted);
+		expect(await parsesToday(db, userId, counted)).toBe(0);
+		expect(await parsesToday(db, userId, next)).toBe(1);
+	});
+
+	it('never goes below zero, and touches only that user', async () => {
+		const other = await createTestUser(db);
+		const now = new Date('2026-11-02T10:00:00Z');
+		await countParse(db, other, now);
+		await refundParse(db, userId, now);
+		expect(await parsesToday(db, userId, now)).toBe(0);
+		expect(await parsesToday(db, other, now)).toBe(1);
 	});
 });
 

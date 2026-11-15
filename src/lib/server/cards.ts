@@ -2,7 +2,7 @@ import { and, asc, desc, eq, getTableColumns, gte, sql } from 'drizzle-orm';
 import { MAX_SUBTASKS } from '../limits';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
-import { NotFoundError } from './errors';
+import { NotFoundError, notFoundIfGone } from './errors';
 import { sameStepText } from './links';
 import { getPile, pilesQuery, type Pile } from './piles';
 import { parsesTodayQuery } from './usage';
@@ -176,7 +176,7 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 	if (newPile) {
 		await db.batch([db.insert(piles).values({ ...newPile, user_id: userId }), cardInsert, ...rest]);
 	} else {
-		await db.batch([cardInsert, ...rest]);
+		await notFoundIfGone(db.batch([cardInsert, ...rest]), 'pile');
 	}
 	return cardId;
 }
@@ -261,20 +261,25 @@ export async function saveCard(
 	if (!card) throw new NotFoundError('card');
 	if (!pile) throw new NotFoundError('pile');
 
-	await db.batch([
-		db
-			.update(cards)
-			.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
-			.where(ownCard(userId, cardId)),
-		db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
-		...subtaskInserts(db, cardId, items),
-		ftsDelete(db, cardId),
-		ftsInsert(
-			db,
-			{ id: cardId, userId, title: edit.title, notes: edit.notes },
-			items.map((item) => item.text)
-		)
-	]);
+	const [updated] = await notFoundIfGone(
+		db.batch([
+			db
+				.update(cards)
+				.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
+				.where(ownCard(userId, cardId))
+				.returning({ id: cards.id }),
+			db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
+			...subtaskInserts(db, cardId, items),
+			ftsDelete(db, cardId),
+			ftsInsert(
+				db,
+				{ id: cardId, userId, title: edit.title, notes: edit.notes },
+				items.map((item) => item.text)
+			)
+		]),
+		'card'
+	);
+	if (updated.length === 0) throw new NotFoundError('card');
 }
 
 /** Moves a card to another of the user's piles; returns the pile it came from, for Undo. */
@@ -332,15 +337,18 @@ export async function appendSubtasks(
 	if (kept.length === 0) return [];
 
 	const firstOrder = existing.length > 0 ? existing[existing.length - 1].sort_order + 1 : 0;
-	const [, ...results] = await db.batch([
-		ftsDelete(db, cardId),
-		ftsInsert(db, { id: cardId, userId, title: card.title, notes: card.notes }, [
-			...existing.map((s) => s.text),
-			...kept.map((s) => s.text)
+	const [, ...results] = await notFoundIfGone(
+		db.batch([
+			ftsDelete(db, cardId),
+			ftsInsert(db, { id: cardId, userId, title: card.title, notes: card.notes }, [
+				...existing.map((s) => s.text),
+				...kept.map((s) => s.text)
+			]),
+			...subtaskInserts(db, cardId, kept, firstOrder),
+			listSubtasks(db, cardId, firstOrder)
 		]),
-		...subtaskInserts(db, cardId, kept, firstOrder),
-		listSubtasks(db, cardId, firstOrder)
-	]);
+		'card'
+	);
 	return results.at(-1) as Subtask[];
 }
 

@@ -1,7 +1,13 @@
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import type { Db } from './db';
 import { cards, piles } from './db/schema';
-import { DuplicatePileError, LastPileError, NotFoundError, PileNotEmptyError } from './errors';
+import {
+	DuplicatePileError,
+	LastPileError,
+	NotFoundError,
+	notFoundIfGone,
+	PileNotEmptyError
+} from './errors';
 
 export const DEFAULT_PILES = [
 	'house',
@@ -155,11 +161,14 @@ export async function deletePile(
 	}
 	if (!reassignToPileId || reassignToPileId === pileId) throw new PileNotEmptyError(n);
 	if (!target) throw new NotFoundError('pile');
-	await db.batch([
-		db
-			.update(cards)
-			.set({ pile_id: target.id })
-			.where(and(eq(cards.pile_id, pileId), eq(cards.user_id, userId))),
-		deletePileRow
-	]);
+	await notFoundIfGone(
+		db.batch([
+			db
+				.update(cards)
+				.set({ pile_id: target.id })
+				.where(and(eq(cards.pile_id, pileId), eq(cards.user_id, userId))),
+			deletePileRow
+		]),
+		'pile'
+	);
 }

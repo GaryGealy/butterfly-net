@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
 	appendSubtasks,
 	cardPageData,
@@ -16,10 +16,11 @@ import {
 } from './cards';
 import type { Db } from './db';
 import { allSql } from './db/raw';
+import { piles } from './db/schema';
 import { NotFoundError } from './errors';
 import { listPiles, seedDefaultPiles, type Pile } from './piles';
 import { searchCards } from './search';
-import { createTestDb, createTestUser } from './test/db';
+import { beforeBatch, createTestDb, createTestUser } from './test/db';
 import { countParse } from './usage';
 
 const newId = () => crypto.randomUUID();
@@ -262,6 +263,73 @@ describe('saveCard', () => {
 		const twenty = steps(...Array.from({ length: 20 }, (_, i) => `step ${i + 1}`));
 		await saveCard(db, userId, id, { title: 'Many', notes: null, pileId: house.id }, twenty);
 		expect((await getCard(db, userId, id))?.subtasks).toHaveLength(20);
+	});
+});
+
+describe('a card or pile deleted between the read and the write', () => {
+	const steps = (...texts: string[]) => texts.map((text) => ({ text, done: false }));
+	const removeCard = (id: string) => () => deleteCard(db, userId, id);
+
+	it('saveCard with no subtasks throws NotFoundError and leaves no stray search row', async () => {
+		const id = await createCard(db, userId, newCard());
+		beforeBatch(db, 2, removeCard(id));
+		await expect(
+			saveCard(db, userId, id, { title: 'Gone', notes: null, pileId: house.id }, [])
+		).rejects.toBeInstanceOf(NotFoundError);
+		expect(await countRows('cards_fts')).toBe(0);
+	});
+
+	it('after that save, new cards still save and are searchable', async () => {
+		const id = await createCard(db, userId, newCard());
+		beforeBatch(db, 2, removeCard(id));
+		await saveCard(db, userId, id, { title: 'Gone', notes: null, pileId: house.id }, []).catch(
+			() => {}
+		);
+		await createCard(db, userId, newCard({ title: 'Paint the fence' }));
+		expect((await searchCards(db, userId, 'fence')).map((r) => r.title)).toEqual([
+			'Paint the fence'
+		]);
+	});
+
+	it('saveCard with subtasks throws NotFoundError', async () => {
+		const id = await createCard(db, userId, newCard());
+		beforeBatch(db, 2, removeCard(id));
+		await expect(
+			saveCard(db, userId, id, { title: 'Gone', notes: null, pileId: house.id }, steps('a'))
+		).rejects.toBeInstanceOf(NotFoundError);
+		expect(await countRows('subtasks')).toBe(0);
+	});
+
+	it('saveCard onto a pile deleted meanwhile throws NotFoundError and changes nothing', async () => {
+		const id = await createCard(db, userId, newCard({ subtasks: ['keep'] }));
+		beforeBatch(db, 2, () => db.delete(piles).where(eq(piles.id, ideas.id)));
+		await expect(
+			saveCard(db, userId, id, { title: 'Moved', notes: null, pileId: ideas.id }, [])
+		).rejects.toBeInstanceOf(NotFoundError);
+		const card = await getCard(db, userId, id);
+		expect(card).toMatchObject({ title: 'Fix the gate latch', pile_name: 'house' });
+		expect(card?.subtasks.map((s) => s.text)).toEqual(['keep']);
+	});
+
+	it('createCard onto a pile deleted meanwhile throws NotFoundError and creates nothing', async () => {
+		beforeBatch(db, 1, () => db.delete(piles).where(eq(piles.id, ideas.id)));
+		await expect(
+			createCard(db, userId, newCard({ pileId: ideas.id, subtasks: ['a'] }))
+		).rejects.toBeInstanceOf(NotFoundError);
+		expect([
+			await countRows('cards'),
+			await countRows('subtasks'),
+			await countRows('cards_fts')
+		]).toEqual([0, 0, 0]);
+	});
+
+	it('appendSubtasks throws NotFoundError and leaves no stray search row', async () => {
+		const id = await createCard(db, userId, newCard());
+		beforeBatch(db, 2, removeCard(id));
+		await expect(
+			appendSubtasks(db, userId, id, [{ text: 'a step', url: null, linkTitle: null }])
+		).rejects.toBeInstanceOf(NotFoundError);
+		expect(await countRows('cards_fts')).toBe(0);
 	});
 });
 

@@ -14,6 +14,20 @@ export function createTestDb(): Db {
 	return withBatch(sqlite, local);
 }
 
+/**
+ * Runs `fn` just before the db's `n`th batch (1-based), once: a stand-in for another request
+ * changing the data between a function's read and its write.
+ */
+export function beforeBatch(db: Db, n: number, fn: () => Promise<unknown>): void {
+	const batch = db.batch.bind(db);
+	let calls = 0;
+	db.batch = (async (queries: Parameters<Db['batch']>[0]) => {
+		calls += 1;
+		if (calls === n) await fn();
+		return batch(queries);
+	}) as unknown as Db['batch'];
+}
+
 /** Inserts a user directly (no password hashing) and returns its id. */
 export async function createTestUser(
 	db: Db,

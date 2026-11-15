@@ -21,13 +21,19 @@ export function ftsDelete(db: Db, cardId: string) {
 	return db.delete(cardsFts).where(eq(cardsFts.rowid, searchIdOf(cardId)));
 }
 
+/** Inserts the card's search row, or nothing if the card no longer exists. */
 export function ftsInsert(db: Db, card: IndexedCard, subtaskTexts: string[]) {
-	return db.insert(cardsFts).values({
-		rowid: searchIdOf(card.id),
-		card_id: card.id,
-		user_id: card.userId,
-		title: card.title,
-		notes: card.notes ?? '',
-		subtasks: subtaskTexts.join('\n')
-	});
+	return db.insert(cardsFts).select(
+		db
+			.select({
+				rowid: cards.search_id,
+				card_id: cards.id,
+				user_id: cards.user_id,
+				title: sql<string>`${card.title}`.as('title'),
+				notes: sql<string>`${card.notes ?? ''}`.as('notes'),
+				subtasks: sql<string>`${subtaskTexts.join('\n')}`.as('subtasks')
+			})
+			.from(cards)
+			.where(eq(cards.id, card.id))
+	);
 }

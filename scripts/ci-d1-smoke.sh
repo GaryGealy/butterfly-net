@@ -104,6 +104,11 @@ status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$WORK/parse.json" -w '%{http_cod
 	--data '{"text":"buy smoke detector batteries"}') || true
 expect_status "POST /api/parse (no key, fallback)" 200 "$status"
 grep -q '"source":"fallback"' "$WORK/parse.json" || fail "POST /api/parse: expected a fallback preview, got $(cat "$WORK/parse.json")"
+# A fallback isn't a Claude sort, so it's given back: today's count is 0 again.
+used=$(cd "$WORK" && "$WRANGLER" d1 execute butterfly-net-db --local --persist-to "$WORK/state" --json \
+	--command "SELECT coalesce(sum(count), 0) AS n FROM parse_usage" | grep -o '"n": *[0-9]*' | grep -o '[0-9]*$')
+[ "$used" = "0" ] || fail "POST /api/parse: a fallback should give its sort back, but $used sorts are counted"
+echo "ok  the fallback gave its sort back"
 
 # 4. Save a card onto a new pile.
 title="Smoke card $RANDOM"

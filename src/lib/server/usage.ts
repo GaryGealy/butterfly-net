@@ -1,4 +1,5 @@
 import { and, eq, sql } from 'drizzle-orm';
+import { DAILY_PARSE_LIMIT } from '../limits';
 import type { Db } from './db';
 import { parseUsage } from './db/schema';
 
@@ -7,17 +8,29 @@ export function usageDay(now: Date): string {
 	return now.toISOString().slice(0, 10);
 }
 
-/** Counts one Claude sort for the user today and returns today's new total, in one statement. */
+/**
+ * Counts one Claude sort for the user today and returns today's new total, in one statement.
+ * Past the limit the count stays at DAILY_PARSE_LIMIT + 1, so blocked sorts don't inflate it.
+ */
 export async function countParse(db: Db, userId: string, now = new Date()): Promise<number> {
 	const [row] = await db
 		.insert(parseUsage)
 		.values({ user_id: userId, day: usageDay(now), count: 1 })
 		.onConflictDoUpdate({
 			target: [parseUsage.user_id, parseUsage.day],
-			set: { count: sql`${parseUsage.count} + 1` }
+			set: { count: sql`${parseUsage.count} + 1` },
+			setWhere: sql`${parseUsage.count} <= ${DAILY_PARSE_LIMIT}`
 		})
 		.returning({ count: parseUsage.count });
-	return row.count;
+	return row?.count ?? DAILY_PARSE_LIMIT + 1;
+}
+
+/** Gives back a sort Claude didn't deliver. Pass the `now` it was counted with. */
+export async function refundParse(db: Db, userId: string, now: Date): Promise<void> {
+	await db
+		.update(parseUsage)
+		.set({ count: sql`max(${parseUsage.count} - 1, 0)` })
+		.where(and(eq(parseUsage.user_id, userId), eq(parseUsage.day, usageDay(now))));
 }
 
 /** How many Claude sorts the user has asked for today, without counting one. */

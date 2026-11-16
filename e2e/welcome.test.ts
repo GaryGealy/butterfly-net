@@ -206,4 +206,6 @@ test('opening invite links too fast shows Slow down', async ({ page }) => {
 	await expect(slowDown).toBeVisible();
 	await expect(page.getByText('Too many tries. Wait a minute and try again.')).toBeVisible();
 	await expect(page).toHaveTitle('Slow down · Butterfly Net');
+	await expect(page.locator('[data-status="429"]')).toBeVisible();
+	await expect(page.getByText('Error 429')).toHaveCount(0);
 });

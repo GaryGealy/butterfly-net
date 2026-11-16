@@ -20,12 +20,14 @@
 
 <svelte:head><title>{title} · Butterfly Net</title></svelte:head>
 
-<div class="mx-auto mt-10 max-w-sm rounded-field bg-white p-7 text-center shadow-float">
+<div
+	class="mx-auto mt-10 max-w-sm rounded-field bg-white p-7 text-center shadow-float"
+	data-status={page.status}
+>
 	<span class="mx-auto flex size-14 items-center justify-center rounded-full bg-leaf-tint">
 		<Butterfly class="size-8 text-leaf motion-safe:animate-drift" />
 	</span>
 	<h1 class="mt-4 text-2xl font-extrabold">{heading}</h1>
 	<p class="mt-1 font-bold text-muted">{text}</p>
-	<p class="mt-2 text-sm font-bold text-muted">Error {page.status}</p>
 	<a href={resolve('/')} class="btn-primary mt-6">Back to your piles</a>
 </div>

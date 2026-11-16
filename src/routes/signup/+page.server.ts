@@ -15,11 +15,12 @@ import {
 	TOO_MANY
 } from '../../lib/server/rate-limit';
 import { setSessionCookie } from '../../lib/server/session-cookie';
-import { canSignUpWithoutInvite } from '../../lib/server/signup-domains';
+import { canSignUpWithoutInvite, openSignupsPaused } from '../../lib/server/signup-domains';
 import { serverVar } from '../../lib/server/vars';
 import { credentialsSchema } from '../../lib/server/validation';
 import type { Actions, PageServerLoad } from './$types';
 
+const SIGNUPS_PAUSED = 'Sign-ups are paused for today. Try again tomorrow.';
 const INVITE_ONLY_REFUSAL =
 	'Sign-up is invite-only. Ask the person who told you about Butterfly Net for an invite link.';
 
@@ -52,6 +53,10 @@ export const actions: Actions = {
 
 		// An open-domain email needs no invite, so it never spends one it happens to carry.
 		const openDomain = canSignUpWithoutInvite(parsed.data.email, serverVar('SIGNUP_DOMAINS'));
+		if (openDomain && (await openSignupsPaused(locals.db, serverVar('SIGNUP_DOMAINS')))) {
+			setHeaders({ 'retry-after': '3600' });
+			return fail(429, { email, error: SIGNUPS_PAUSED });
+		}
 		const invite = openDomain
 			? null
 			: await claimInvite(locals.db, String(form.get('invite') ?? ''));

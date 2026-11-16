@@ -46,6 +46,9 @@ database_name = "butterfly-net-db"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "$ROOT/drizzle"
 EOF
+	# The rate limiters, so this build is limited exactly as production is.
+	awk '/^\[\[ratelimits\]\]/ { on = 1 } /^\[/ && !/^\[\[ratelimits\]\]/ && !/^\[ratelimits\./ { on = 0 } on' \
+		"$ROOT/wrangler.toml"
 } >"$WORK/wrangler.toml"
 
 fail() {
@@ -162,5 +165,19 @@ status=$(curl -s --max-time "$CURL_TIMEOUT" -o "$body" -w '%{http_code}' -H "$co
 expect_status "GET /" 200 "$status"
 grep -qF "$title" "$body" || fail "GET /: card title \"$title\" not on the page"
 echo "ok  board shows \"$title\""
+
+# 6. Repeated wrong passwords are rate-limited: one comes back 429 with Retry-After.
+#    Last, so the limit can't affect the steps above.
+limited=""
+for _ in $(seq 1 15); do
+	status=$(curl -s --max-time "$CURL_TIMEOUT" -o /dev/null -D "$WORK/login.headers" -w '%{http_code}' -X POST "$BASE/login" \
+		-H "Origin: $BASE" -H 'Accept: text/html' \
+		--data-urlencode "email=$email" --data-urlencode "password=not the password") || true
+	if [ "$status" = "429" ]; then limited=1; break; fi
+	[ "$status" = "400" ] || fail "POST /login (wrong password): expected HTTP 400 or 429, got $status"
+done
+[ -n "$limited" ] || fail "POST /login: 15 wrong passwords in a row were never rate-limited"
+grep -qi '^retry-after: 60' "$WORK/login.headers" || fail "POST /login 429: no Retry-After: 60 header"
+echo "ok  login is rate-limited after repeated failures"
 
 echo "D1 smoke passed."

@@ -193,3 +193,19 @@ test('with 200% text on a 320px phone the intro fits without sideways scrolling'
 	expect(segment!.width).toBeGreaterThan(40);
 	await expect(page.getByRole('link', { name: 'Create my account' })).toBeVisible();
 });
+
+test('opening invite links too fast shows Slow down', async ({ page }) => {
+	await page.setExtraHTTPHeaders({ 'x-e2e-rate-limit': 'on' });
+	const code = createInviteCode();
+	const slowDown = page.getByRole('heading', { name: 'Slow down' });
+
+	// Counts persist in the local limiter between runs, so the limit may trip early on a quick rerun.
+	for (let tries = 0; tries < 25 && !(await slowDown.isVisible()); tries++) {
+		await page.goto(`/welcome?invite=${code}`);
+	}
+	await expect(slowDown).toBeVisible();
+	await expect(page.getByText('Too many tries. Wait a minute and try again.')).toBeVisible();
+	await expect(page).toHaveTitle('Slow down · Butterfly Net');
+	await expect(page.locator('[data-status="429"]')).toBeVisible();
+	await expect(page.getByText('Error 429')).toHaveCount(0);
+});

@@ -15,3 +15,7 @@ export const DAILY_PARSE_LIMIT = 20;
 
 // Most steps one Break it down press can propose or add.
 export const MAX_BREAKDOWN_STEPS = 8;
+
+// Sign-ups without an invite (SIGNUP_DOMAINS) across everyone in any 24 hours. Those addresses aren't
+// verified, so this caps how many new accounts, and so Claude sorts, one domain can bring in a day.
+export const DAILY_OPEN_SIGNUP_LIMIT = 20;

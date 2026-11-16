@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { PASSWORD, createInviteCode, gotoReady, logOut, signUp } from './helpers';
+import { PASSWORD, createInviteCode, gotoReady, logOut, randomEmail, signUp } from './helpers';
 
 test('signing up lands on the piles page', async ({ page }) => {
 	await signUp(page);
@@ -39,6 +39,26 @@ test('a wrong password shows an error', async ({ page }) => {
 	await page.getByLabel('Password').fill('not the password');
 	await page.getByRole('button', { name: 'Log in' }).click();
 	await expect(page.getByRole('alert')).toHaveText('Wrong email or password');
+});
+
+test('repeated wrong passwords are slowed down', async ({ page }) => {
+	await page.setExtraHTTPHeaders({ 'x-e2e-rate-limit': 'on' });
+	await gotoReady(page, '/login');
+	const email = randomEmail();
+	const alert = page.getByRole('alert');
+	const tooMany = 'Too many tries. Wait a minute and try again.';
+
+	// Counts persist in the local limiter between runs, so the limit may trip early on a quick rerun.
+	let tries = 0;
+	while (tries < 25) {
+		tries += 1;
+		await page.getByLabel('Email').fill(email);
+		await page.getByLabel('Password').fill(`wrong password ${tries}`);
+		await page.getByRole('button', { name: 'Log in' }).click();
+		await expect(alert).toHaveText(/Wrong email or password|Too many tries/);
+		if ((await alert.textContent()) === tooMany) break;
+	}
+	await expect(alert).toHaveText(tooMany);
 });
 
 const INVITE_ONLY = 'Butterfly Net is invite-only right now.';

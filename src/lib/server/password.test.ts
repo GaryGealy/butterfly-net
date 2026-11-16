@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashPassword, verifyPassword } from './password';
+import { DUMMY_HASH, hashPassword, verifyPassword } from './password';
 
 describe('password hashing', () => {
 	it('verifies the right password and rejects a wrong one', async () => {
@@ -15,5 +15,11 @@ describe('password hashing', () => {
 
 	it('rejects a malformed stored hash', async () => {
 		expect(await verifyPassword('x', 'not-a-hash')).toBe(false);
+	});
+
+	it('DUMMY_HASH is a well-formed 100k hash that no password matches', async () => {
+		expect(DUMMY_HASH).toMatch(/^pbkdf2v1:100000:[0-9a-f]{32}:[0-9a-f]{64}$/);
+		expect(await verifyPassword('', DUMMY_HASH)).toBe(false);
+		expect(await verifyPassword('correct horse battery', DUMMY_HASH)).toBe(false);
 	});
 });

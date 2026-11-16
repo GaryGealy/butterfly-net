@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
 	EmailTakenError,
 	authenticate,
@@ -44,6 +44,22 @@ describe('authenticate', () => {
 		expect(await authenticate(db, 'Gary@example.com', 'correct horse battery')).toEqual(user);
 		expect(await authenticate(db, 'gary@example.com', 'wrong password')).toBeNull();
 		expect(await authenticate(db, 'nobody@example.com', 'correct horse battery')).toBeNull();
+	});
+
+	describe('timing', () => {
+		afterEach(() => vi.restoreAllMocks());
+
+		it('an unknown email runs PBKDF2 once, the same as a wrong password', async () => {
+			await registerUser(db, 'gary@example.com', 'correct horse battery');
+			const derive = vi.spyOn(crypto.subtle, 'deriveBits');
+
+			expect(await authenticate(db, 'gary@example.com', 'wrong password')).toBeNull();
+			expect(derive).toHaveBeenCalledTimes(1);
+
+			derive.mockClear();
+			expect(await authenticate(db, 'nobody@example.com', 'wrong password')).toBeNull();
+			expect(derive).toHaveBeenCalledTimes(1);
+		});
 	});
 });
 

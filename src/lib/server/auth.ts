@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from './db';
 import { sessions, users } from './db/schema';
-import { hashPassword, verifyPassword } from './password';
+import { DUMMY_HASH, hashPassword, verifyPassword } from './password';
 import { seedDefaultPiles } from './piles';
 
 export const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -49,7 +49,10 @@ export async function authenticate(
 		.from(users)
 		.where(eq(users.email, normalizeEmail(email)))
 		.limit(1);
-	if (!user) return null;
+	if (!user) {
+		await verifyPassword(password, DUMMY_HASH);
+		return null;
+	}
 	return (await verifyPassword(password, user.password_hash))
 		? { id: user.id, email: user.email }
 		: null;

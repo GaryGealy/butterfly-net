@@ -3,6 +3,10 @@ const SALT_BYTES = 16;
 const KEY_BITS = 256;
 const PREFIX = 'pbkdf2v1:';
 
+/** A real hash of a discarded random password, so a login with no matching user does the same work. */
+export const DUMMY_HASH =
+	'pbkdf2v1:100000:1f42ca2f8036eca52d5078b2d766778f:8cd6f0681397e90ed91a64b3e2434d74d9d9bb0c9f59a1c392ba4cd9ac1f91f1';
+
 const toHex = (bytes: Uint8Array) =>
 	Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 const fromHex = (hex: string) =>

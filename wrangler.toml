@@ -13,6 +13,23 @@ ADMIN_EMAILS = "gary.m.gealy@gmail.com"
 # still says invite-only; whoever shares the link tells people their company email works.
 SIGNUP_DOMAINS = "teamsparq.com"
 
+# Per client IP, keyed "<action>:<ip>" (login | signup | invite). Periods can only be 10 or 60 s,
+# and counts are per Cloudflare location and approximate.
+[[ratelimits]]
+name = "AUTH_LIMITER"
+namespace_id = "1001"
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+# Per normalized email: every login attempt for it.
+[[ratelimits]]
+name = "LOGIN_EMAIL_LIMITER"
+namespace_id = "1002"
+  [ratelimits.simple]
+  limit = 20
+  period = 60
+
 [assets]
 binding = "ASSETS"
 directory = ".svelte-kit/cloudflare"

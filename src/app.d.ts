@@ -16,6 +16,10 @@ declare global {
 			ADMIN_EMAILS?: string;
 			/** Comma-separated email domains that sign up without an invite, from wrangler.toml [vars]. */
 			SIGNUP_DOMAINS?: string;
+			/** Per-IP limiter for login, sign-up and invite checks, from wrangler.toml [[ratelimits]]. */
+			AUTH_LIMITER?: RateLimit;
+			/** Per-email login limiter, from wrangler.toml [[ratelimits]]. */
+			LOGIN_EMAIL_LIMITER?: RateLimit;
 		}
 	}
 

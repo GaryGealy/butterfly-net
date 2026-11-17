@@ -35,7 +35,15 @@ test('the admin creates an invite link and someone joins with it', async ({ page
 
 	await signInAsAdmin(page, 'admin-1@e2e.test');
 	await gotoReady(page, '/invites');
-	await expect(page.getByRole('region', { name: 'Used', exact: true })).toContainText(joiner);
+	await expect(
+		page
+			.getByRole('region', { name: 'Used', exact: true })
+			.getByRole('listitem')
+			.filter({ hasText: joiner })
+	).toContainText(label);
+
+	await gotoReady(page, '/users');
+	await expect(page.getByRole('listitem').filter({ hasText: joiner })).toContainText(`“${label}”`);
 });
 
 test('the admin can revoke an unused link', async ({ page }) => {

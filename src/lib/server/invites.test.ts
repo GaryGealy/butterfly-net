@@ -99,7 +99,7 @@ describe('listInvites', () => {
 		const old = await createInvite(db, adminId, new Date(NOW.getTime() - INVITE_LIFETIME_MS));
 		const first = await createInvite(db, adminId, NOW, 'Sam');
 		const second = await createInvite(db, adminId, later(1000));
-		const used = await createInvite(db, adminId, NOW);
+		const used = await createInvite(db, adminId, NOW, 'Jordan');
 		const joinerId = await createTestUser(db, 'joiner@test.dev');
 		await claimInvite(db, used.code, later(2000));
 		await markInviteUsed(db, used.id, joinerId);
@@ -108,6 +108,8 @@ describe('listInvites', () => {
 		expect(unused.map((i) => i.id)).toEqual([second.id, first.id]);
 		expect(unused.map((i) => i.id)).not.toContain(old.id);
 		expect(unused.map((i) => i.label)).toEqual([null, 'Sam']);
-		expect(usedList).toEqual([{ id: used.id, used_at: later(2000), email: 'joiner@test.dev' }]);
+		expect(usedList).toEqual([
+			{ id: used.id, used_at: later(2000), email: 'joiner@test.dev', label: 'Jordan' }
+		]);
 	});
 });

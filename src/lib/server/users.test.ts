@@ -22,8 +22,13 @@ async function userAt(email: string, iso: string): Promise<string> {
 }
 
 /** Makes a user who joined through an invite created by `inviterId`. */
-async function invitedUser(email: string, iso: string, inviterId: string): Promise<string> {
-	const invite = await createInvite(db, inviterId);
+async function invitedUser(
+	email: string,
+	iso: string,
+	inviterId: string,
+	label: string | null = null
+): Promise<string> {
+	const invite = await createInvite(db, inviterId, new Date(), label);
 	await claimInvite(db, invite.code);
 	const id = await userAt(email, iso);
 	await markInviteUsed(db, invite.id, id);
@@ -57,6 +62,21 @@ describe('listUsers', () => {
 			joinedWith: 'invite',
 			invitedBy: 'admin@test.dev'
 		});
+	});
+
+	it('carries the label of the invite a user joined with', async () => {
+		const admin = await userAt('admin@test.dev', '2026-10-01T00:00:00Z');
+		await invitedUser('labelled@gmail.test', '2026-11-04T00:00:00Z', admin, 'Book club');
+		await invitedUser('plain@gmail.test', '2026-11-03T00:00:00Z', admin);
+		await userAt('colleague@company.test', '2026-11-02T00:00:00Z');
+
+		const labels = (await listUsers(db, config)).map((u) => [u.email, u.inviteLabel]);
+		expect(labels).toEqual([
+			['labelled@gmail.test', 'Book club'],
+			['plain@gmail.test', null],
+			['colleague@company.test', null],
+			['admin@test.dev', null]
+		]);
 	});
 
 	it('keeps a user whose inviter was deleted (the invite goes with the inviter)', async () => {
@@ -102,7 +122,7 @@ describe('listUsers', () => {
 		await userAt('admin@test.dev', '2026-10-01T00:00:00Z');
 		const [admin] = await listUsers(db, config);
 		expect(Object.keys(admin).sort()).toEqual(
-			['created_at', 'email', 'id', 'invitedBy', 'isAdmin', 'joinedWith'].sort()
+			['created_at', 'email', 'id', 'inviteLabel', 'invitedBy', 'isAdmin', 'joinedWith'].sort()
 		);
 	});
 });

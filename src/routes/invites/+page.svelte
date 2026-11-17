@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { enhance } from '$app/forms';
+	import { MAX_INVITE_LABEL_LENGTH } from '#lib/limits.ts';
 
 	let { data, form } = $props();
 
@@ -36,23 +37,37 @@
 	Each link lets one person create an account. Links expire after 14 days.
 </p>
 
-<form method="POST" action="?/create" use:enhance class="mt-5">
+<form method="POST" action="?/create" use:enhance class="mt-5 flex max-w-2xl flex-wrap gap-2">
+	<input
+		name="label"
+		maxlength={MAX_INVITE_LABEL_LENGTH}
+		placeholder="Who's it for? (optional)"
+		aria-label="Who's it for? (optional)"
+		value={form?.error ? (form.label ?? '') : ''}
+		class="field min-w-0 flex-1 basis-48"
+	/>
 	<button class="btn-primary">Create invite link</button>
 </form>
+{#if form?.error}<p role="alert" class="mt-3 text-sm font-bold text-red-700">{form.error}</p>{/if}
 
 {#if form?.created}
 	{@const created = form.created}
-	<div class="chip mt-4 flex max-w-2xl items-center gap-2 p-2 pl-4">
-		<label for="new-invite" class="sr-only">New invite link</label>
-		<input
-			id="new-invite"
-			readonly
-			value={created}
-			class="min-w-0 flex-1 rounded-md border-0 bg-transparent p-0 font-semibold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
-		/>
-		<button type="button" class="btn-soft shrink-0" onclick={() => copy(created)}
-			>{copied === created ? 'Copied' : 'Copy'}</button
-		>
+	<div class="chip mt-4 max-w-2xl p-2 pl-4">
+		{#if form.label}
+			<p class="text-sm font-bold [overflow-wrap:anywhere] text-muted">For {form.label}</p>
+		{/if}
+		<div class="flex items-center gap-2">
+			<label for="new-invite" class="sr-only">New invite link</label>
+			<input
+				id="new-invite"
+				readonly
+				value={created}
+				class="min-w-0 flex-1 rounded-md border-0 bg-transparent p-0 font-semibold focus:ring-0 focus:outline-offset-4 focus:outline-leaf"
+			/>
+			<button type="button" class="btn-soft shrink-0" onclick={() => copy(created)}
+				>{copied === created ? 'Copied' : 'Copy'}</button
+			>
+		</div>
 	</div>
 {/if}
 
@@ -78,7 +93,14 @@
 		<ul class="mt-2 space-y-2">
 			{#each data.unused as invite (invite.id)}
 				<li class="chip flex flex-wrap items-center gap-2 py-2 pr-2 pl-4">
-					<span class="min-w-40 flex-1 truncate font-mono text-sm">{invite.code}</span>
+					<span class="min-w-40 flex-1">
+						{#if invite.label}
+							<span class="block truncate font-extrabold">{invite.label}</span>
+							<span class="block truncate font-mono text-sm text-muted">{invite.code}</span>
+						{:else}
+							<span class="block truncate font-mono text-sm">{invite.code}</span>
+						{/if}
+					</span>
 					<span class="text-sm font-bold whitespace-nowrap text-muted"
 						>expires {day(invite.expires_at)}</span
 					>

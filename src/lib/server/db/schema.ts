@@ -100,7 +100,9 @@ export const invites = sqliteTable('invites', {
 	created_at: createdAt(),
 	expires_at: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
 	used_at: integer('used_at', { mode: 'timestamp_ms' }),
-	used_by: text('used_by').references(() => users.id, { onDelete: 'set null' })
+	used_by: text('used_by').references(() => users.id, { onDelete: 'set null' }),
+	/** Admin-only: who the link is for. */
+	label: text('label')
 });
 
 /** One row per user per UTC day: how many Claude sorts they asked for. */

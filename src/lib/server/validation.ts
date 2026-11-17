@@ -5,6 +5,7 @@ import { httpUrl } from './links';
 import {
 	MAX_BREAKDOWN_STEPS,
 	MAX_EMAIL_LENGTH,
+	MAX_INVITE_LABEL_LENGTH,
 	MAX_NOTES_LENGTH,
 	MAX_PASSWORD_LENGTH,
 	MAX_PILE_NAME_LENGTH,
@@ -35,6 +36,17 @@ export const notesSchema = z
 	.string()
 	.trim()
 	.max(MAX_NOTES_LENGTH, `Notes must be ${MAX_NOTES_LENGTH} characters or fewer`)
+	.nullish()
+	.transform((value) => (value ? value : null));
+
+export const inviteLabelSchema = z
+	.string()
+	.transform((value) => value.replace(/\s+/g, ' ').trim())
+	.pipe(
+		z
+			.string()
+			.max(MAX_INVITE_LABEL_LENGTH, `Label must be ${MAX_INVITE_LABEL_LENGTH} characters or fewer`)
+	)
 	.nullish()
 	.transform((value) => (value ? value : null));
 

@@ -35,6 +35,11 @@ describe('createInvite', () => {
 		const b = await createInvite(db, adminId, NOW);
 		expect(a.code).not.toBe(b.code);
 	});
+
+	it('stores the label it is given, or null', async () => {
+		expect((await createInvite(db, adminId, NOW, 'Sam')).label).toBe('Sam');
+		expect((await createInvite(db, adminId, NOW)).label).toBeNull();
+	});
 });
 
 describe('findUsableInvite', () => {
@@ -92,7 +97,7 @@ describe('revokeInvite', () => {
 describe('listInvites', () => {
 	it('lists unused and used invites, newest first, and hides expired unused ones', async () => {
 		const old = await createInvite(db, adminId, new Date(NOW.getTime() - INVITE_LIFETIME_MS));
-		const first = await createInvite(db, adminId, NOW);
+		const first = await createInvite(db, adminId, NOW, 'Sam');
 		const second = await createInvite(db, adminId, later(1000));
 		const used = await createInvite(db, adminId, NOW);
 		const joinerId = await createTestUser(db, 'joiner@test.dev');
@@ -102,6 +107,7 @@ describe('listInvites', () => {
 		const { unused, used: usedList } = await listInvites(db, later(3000));
 		expect(unused.map((i) => i.id)).toEqual([second.id, first.id]);
 		expect(unused.map((i) => i.id)).not.toContain(old.id);
+		expect(unused.map((i) => i.label)).toEqual([null, 'Sam']);
 		expect(usedList).toEqual([{ id: used.id, used_at: later(2000), email: 'joiner@test.dev' }]);
 	});
 });

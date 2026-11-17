@@ -5,10 +5,22 @@ test('the admin creates an invite link and someone joins with it', async ({ page
 	await signInAsAdmin(page, 'admin-1@e2e.test');
 	await page.getByRole('link', { name: 'Invites' }).click();
 	await waitForHydration(page);
+	const label = `Sam ${Date.now()}`;
+	const labelBox = page.getByLabel("Who's it for? (optional)");
+	await labelBox.fill(label);
 	await page.getByRole('button', { name: 'Create invite link' }).click();
 	const link = page.getByLabel('New invite link');
 	await expect(link).toHaveValue(/\/welcome\?invite=[A-Za-z0-9_-]{22}$/);
+	await expect(page.getByText(`For ${label}`)).toBeVisible();
+	await expect(labelBox).toHaveValue('');
 	const url = new URL(await link.inputValue());
+	const code = url.searchParams.get('invite')!;
+	await expect(
+		page
+			.getByRole('region', { name: 'Unused', exact: true })
+			.getByRole('listitem')
+			.filter({ hasText: code })
+	).toContainText(label);
 	await logOut(page);
 
 	const joiner = `joiner-${Date.now()}@test.dev`;

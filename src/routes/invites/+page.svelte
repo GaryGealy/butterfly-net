@@ -125,9 +125,16 @@
 		<ul class="mt-2 space-y-2">
 			{#each data.used as invite (invite.id)}
 				<li class="chip flex items-center justify-between gap-2 px-4 py-2">
-					<span class="min-w-0 font-bold [overflow-wrap:anywhere]"
-						>{invite.email ?? 'Unknown account'}</span
-					>
+					<span class="min-w-0">
+						<span class="block font-bold [overflow-wrap:anywhere]"
+							>{invite.email ?? 'Unknown account'}</span
+						>
+						{#if invite.label}
+							<span class="block text-sm font-bold [overflow-wrap:anywhere] text-muted"
+								>{invite.label}</span
+							>
+						{/if}
+					</span>
 					<span class="shrink-0 text-sm font-bold whitespace-nowrap text-muted"
 						>joined {day(invite.used_at)}</span
 					>

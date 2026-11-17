@@ -17,6 +17,7 @@ export interface UsedInvite {
 	used_at: Date;
 	/** Null when the account that used it has since been deleted. */
 	email: string | null;
+	label: string | null;
 }
 
 /** 16 random bytes as base64url: 22 characters, safe in a URL. */
@@ -116,7 +117,12 @@ export async function listInvites(
 		.where(and(isNull(invites.used_at), gt(invites.expires_at, now)))
 		.orderBy(desc(invites.created_at));
 	const usedRows = await db
-		.select({ id: invites.id, used_at: invites.used_at, email: users.email })
+		.select({
+			id: invites.id,
+			used_at: invites.used_at,
+			email: users.email,
+			label: invites.label
+		})
 		.from(invites)
 		.leftJoin(users, eq(invites.used_by, users.id))
 		.where(isNotNull(invites.used_at))

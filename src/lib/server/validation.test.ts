@@ -4,6 +4,7 @@ import {
 	captureSaveSchema,
 	appendStepsSchema,
 	credentialsSchema,
+	inviteLabelSchema,
 	subtaskRowsFromForm,
 	subtasksSchema
 } from './validation';
@@ -165,5 +166,26 @@ describe('appendStepsSchema', () => {
 				steps: [{ text: 'Go', url: 'javascript:alert(1)', linkTitle: 'x' }]
 			})
 		).toEqual({ steps: [{ text: 'Go', url: null, linkTitle: null }] });
+	});
+});
+
+describe('inviteLabelSchema', () => {
+	it('trims and turns an empty label into null', () => {
+		expect(inviteLabelSchema.parse('  Sam  ')).toBe('Sam');
+		expect(inviteLabelSchema.parse('')).toBeNull();
+		expect(inviteLabelSchema.parse('   ')).toBeNull();
+		expect(inviteLabelSchema.parse(null)).toBeNull();
+		expect(inviteLabelSchema.parse(undefined)).toBeNull();
+	});
+
+	it('collapses runs of whitespace and newlines to one space', () => {
+		expect(inviteLabelSchema.parse('Sam\n\n  from\tchurch')).toBe('Sam from church');
+	});
+
+	it('rejects a label over 60 characters', () => {
+		expect(inviteLabelSchema.parse('x'.repeat(60))).toBe('x'.repeat(60));
+		const result = inviteLabelSchema.safeParse('x'.repeat(61));
+		expect(result.success).toBe(false);
+		expect(result.error?.issues[0].message).toBe('Label must be 60 characters or fewer');
 	});
 });

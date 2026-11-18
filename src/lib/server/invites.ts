@@ -9,6 +9,7 @@ export interface UnusedInvite {
 	code: string;
 	created_at: Date;
 	expires_at: Date;
+	label: string | null;
 }
 
 export interface UsedInvite {
@@ -16,6 +17,7 @@ export interface UsedInvite {
 	used_at: Date;
 	/** Null when the account that used it has since been deleted. */
 	email: string | null;
+	label: string | null;
 }
 
 /** 16 random bytes as base64url: 22 characters, safe in a URL. */
@@ -30,17 +32,24 @@ function newCode(): string {
 export async function createInvite(
 	db: Db,
 	adminId: string,
-	now = new Date()
-): Promise<{ id: string; code: string; expires_at: Date }> {
+	now = new Date(),
+	label: string | null = null
+): Promise<{ id: string; code: string; expires_at: Date; label: string | null }> {
 	const [invite] = await db
 		.insert(invites)
 		.values({
 			code: newCode(),
 			created_by: adminId,
 			created_at: now,
-			expires_at: new Date(now.getTime() + INVITE_LIFETIME_MS)
+			expires_at: new Date(now.getTime() + INVITE_LIFETIME_MS),
+			label
 		})
-		.returning({ id: invites.id, code: invites.code, expires_at: invites.expires_at });
+		.returning({
+			id: invites.id,
+			code: invites.code,
+			expires_at: invites.expires_at,
+			label: invites.label
+		});
 	return invite;
 }
 
@@ -101,13 +110,19 @@ export async function listInvites(
 			id: invites.id,
 			code: invites.code,
 			created_at: invites.created_at,
-			expires_at: invites.expires_at
+			expires_at: invites.expires_at,
+			label: invites.label
 		})
 		.from(invites)
 		.where(and(isNull(invites.used_at), gt(invites.expires_at, now)))
 		.orderBy(desc(invites.created_at));
 	const usedRows = await db
-		.select({ id: invites.id, used_at: invites.used_at, email: users.email })
+		.select({
+			id: invites.id,
+			used_at: invites.used_at,
+			email: users.email,
+			label: invites.label
+		})
 		.from(invites)
 		.leftJoin(users, eq(invites.used_by, users.id))
 		.where(isNotNull(invites.used_at))

@@ -16,6 +16,8 @@ export interface ListedUser {
 	joinedWith: 'invite' | 'company' | 'none';
 	/** The email of whoever made their invite, when they joined with one. */
 	invitedBy: string | null;
+	/** The label on the invite they joined with. */
+	inviteLabel: string | null;
 	isAdmin: boolean;
 }
 
@@ -32,14 +34,15 @@ export async function listUsers(
 			email: users.email,
 			created_at: users.created_at,
 			inviteId: invites.id,
-			invitedBy: inviter.email
+			invitedBy: inviter.email,
+			inviteLabel: invites.label
 		})
 		.from(users)
 		.leftJoin(invites, eq(invites.used_by, users.id))
 		.leftJoin(inviter, eq(inviter.id, invites.created_by))
 		.orderBy(desc(users.created_at));
 
-	return rows.map(({ id, email, created_at, inviteId, invitedBy }) => ({
+	return rows.map(({ id, email, created_at, inviteId, invitedBy, inviteLabel }) => ({
 		id,
 		email,
 		created_at,
@@ -49,6 +52,7 @@ export async function listUsers(
 				? 'company'
 				: 'none',
 		invitedBy: invitedBy ?? null,
+		inviteLabel: inviteLabel ?? null,
 		isAdmin: isAdminEmail(email, config.adminEmails)
 	}));
 }

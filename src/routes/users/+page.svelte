@@ -15,7 +15,8 @@
 
 	const howTheyGotIn = (user: (typeof data.users)[number]) =>
 		user.joinedWith === 'invite'
-			? `Invite from ${user.invitedBy ?? 'a deleted account'}`
+			? `Invite from ${user.invitedBy ?? 'a deleted account'}` +
+				(user.inviteLabel ? ` · “${user.inviteLabel}”` : '')
 			: user.joinedWith === 'company'
 				? 'Company email'
 				: 'No invite';

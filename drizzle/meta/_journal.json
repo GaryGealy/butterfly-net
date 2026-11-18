@@ -43,6 +43,13 @@
       "when": 1794583769978,
       "tag": "0005_cards_search_rebuild",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794954893472,
+      "tag": "0006_hard_blob",
+      "breakpoints": true
     }
   ]
 }

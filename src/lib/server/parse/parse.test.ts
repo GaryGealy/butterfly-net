@@ -10,6 +10,7 @@ import {
 	interpretResponse,
 	parseCapture
 } from './parse';
+import { PARSE_JSON_SCHEMA } from './schema';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -33,6 +34,7 @@ const card = (overrides: Record<string, unknown> = {}) => ({
 	isNewPile: false,
 	notes: '',
 	subtasks: [],
+	priority: 'medium',
 	...overrides
 });
 
@@ -57,6 +59,18 @@ describe('buildParseRequest', () => {
 	it('tells Claude the note is often dictated', () => {
 		expect(buildParseRequest('get resin', ['house']).system).toMatch(/dictated/);
 	});
+
+	it('asks for a priority and explains when to set it', () => {
+		const schema = PARSE_JSON_SCHEMA as {
+			properties: Record<string, { enum?: string[] }>;
+			required: string[];
+		};
+		expect(schema.properties.priority.enum).toEqual(['low', 'medium', 'high']);
+		expect(schema.required).toContain('priority');
+		const system = buildParseRequest('get resin', ['house']).system;
+		expect(system).toMatch(/urgent/);
+		expect(system).toMatch(/no rush/);
+	});
 });
 
 describe('interpretResponse', () => {
@@ -66,6 +80,7 @@ describe('interpretResponse', () => {
 			pile: { kind: 'existing', id: 'p-models', name: 'model building' },
 			notes: null,
 			subtasks: [],
+			priority: 'medium',
 			source: 'claude'
 		});
 	});
@@ -91,6 +106,15 @@ describe('interpretResponse', () => {
 		expect(result?.subtasks).toHaveLength(20);
 	});
 
+	it("maps the reply's priority", () => {
+		expect(interpretResponse(reply(card({ priority: 'high' })), piles)?.priority).toBe('high');
+		expect(interpretResponse(reply(card({ priority: 'low' })), piles)?.priority).toBe('low');
+	});
+
+	it('rejects a reply with an unknown priority', () => {
+		expect(interpretResponse(reply(card({ priority: 'urgent' })), piles)).toBeNull();
+	});
+
 	it('returns null for a refusal, a truncated reply, invalid JSON, or the wrong shape', () => {
 		expect(interpretResponse(reply(card(), 'refusal'), piles)).toBeNull();
 		expect(interpretResponse(reply(card(), 'max_tokens'), piles)).toBeNull();
@@ -108,6 +132,7 @@ describe('fallbackResult', () => {
 			pile: null,
 			notes: null,
 			subtasks: [],
+			priority: 'medium',
 			source: 'fallback'
 		});
 	});

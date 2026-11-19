@@ -53,7 +53,8 @@ describe('captureSaveSchema', () => {
 			title: 'Paint the X-wing',
 			notes: null,
 			subtasks: [],
-			pile: { kind: 'existing', id: 'p1' }
+			pile: { kind: 'existing', id: 'p1' },
+			priority: 'medium'
 		});
 		expect(
 			captureSaveSchema.parse({ ...base, pile: { kind: 'new', name: ' garden ' } }).pile
@@ -76,6 +77,17 @@ describe('captureSaveSchema', () => {
 		expect(
 			captureSaveSchema.safeParse({ ...base, pile: { kind: 'new', name: 'x'.repeat(41) } }).success
 		).toBe(false);
+	});
+
+	it('defaults a missing priority to medium', () => {
+		const pile = { kind: 'existing', id: 'p1' } as const;
+		expect(captureSaveSchema.parse({ ...base, pile }).priority).toBe('medium');
+		expect(captureSaveSchema.parse({ ...base, pile, priority: 'high' }).priority).toBe('high');
+	});
+
+	it('rejects a priority that is not low, medium or high', () => {
+		const pile = { kind: 'existing', id: 'p1' } as const;
+		expect(captureSaveSchema.safeParse({ ...base, pile, priority: 'urgent' }).success).toBe(false);
 	});
 
 	it('caps notes at 1000 characters', () => {

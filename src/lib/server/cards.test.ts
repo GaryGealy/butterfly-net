@@ -76,6 +76,13 @@ describe('createCard and getCard', () => {
 		]);
 	});
 
+	it('createCard stores the priority, medium by default', async () => {
+		const urgent = await createCard(db, userId, newCard({ priority: 'high' }));
+		const plain = await createCard(db, userId, newCard());
+		expect((await getCard(db, userId, urgent))?.priority).toBe('high');
+		expect((await getCard(db, userId, plain))?.priority).toBe('medium');
+	});
+
 	it("refuses another user's pile", async () => {
 		const other = await createTestUser(db);
 		await seedDefaultPiles(db, other);

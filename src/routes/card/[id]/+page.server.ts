@@ -37,7 +37,9 @@ export const actions: Actions = {
 		const parsed = cardEditSchema.safeParse({
 			title: form.get('title'),
 			notes: form.get('notes'),
-			pileId: form.get('pileId')
+			pileId: form.get('pileId'),
+			// zod's default only fills in undefined, and a missing field reads as null.
+			priority: form.get('priority') ?? undefined
 		});
 		if (!parsed.success) return fail(400, { error: parsed.error.issues[0].message });
 

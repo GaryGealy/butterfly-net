@@ -6,6 +6,7 @@ import {
 	text,
 	uniqueIndex
 } from 'drizzle-orm/sqlite-core';
+import { DEFAULT_PRIORITY, PRIORITIES } from '../../priority';
 
 const id = () =>
 	text('id')
@@ -62,6 +63,7 @@ export const cards = sqliteTable(
 		status: text('status', { enum: ['active', 'done'] })
 			.notNull()
 			.default('active'),
+		priority: text('priority', { enum: PRIORITIES }).notNull().default(DEFAULT_PRIORITY),
 		created_at: createdAt(),
 		done_at: integer('done_at', { mode: 'timestamp_ms' }),
 		/** The card's rowid in cards_fts. */

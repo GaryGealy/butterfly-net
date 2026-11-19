@@ -36,7 +36,9 @@ sits on its pile until you mark it done.
 
 ### What it deliberately doesn't do
 
-No due dates, reminders, priorities or recurring tasks. Butterfly Net is for the
+No due dates, reminders or recurring tasks, and no priority to pick. A card is
+Medium unless you say it's urgent or can wait ("urgent: call the plumber",
+"whenever"), and then it gets a small marker on its pile. Butterfly Net is for the
 someday-things you don't want to forget, not a calendar or a project manager.
 Leaving those out keeps capture faster than reaching for a paper card.
 
@@ -118,8 +120,8 @@ Butterfly Net.
 
 Butterfly Net is designed never to lose a thought: if the AI is slow or
 unavailable, the user's words are kept as typed and can be filed by hand. It
-deliberately leaves out due dates, reminders and priorities to keep capture
-fast.
+deliberately leaves out due dates and reminders, and never asks for a priority,
+to keep capture fast.
 
 **Availability.** Butterfly Net is available now at
 <https://butterfly-net.gary-m-gealy.workers.dev>. Sign-up is by invitation during early access. It
@@ -164,6 +166,8 @@ to a searchable archive. It runs in any browser and installs like an app.
   you.
 - Don't promise reminders, due dates, offline capture, sharing or integrations.
   v0.1.0 has none of them.
+- Priority is a marker you set by saying so ("urgent", "no rush"). Don't present
+  it as sorting or ranking.
 - Voice works through the device's own dictation (macOS Dictation on the Mac).
   Don't describe it as a built-in voice assistant.
 - Use real cards from the product as examples. Don't invent user counts,

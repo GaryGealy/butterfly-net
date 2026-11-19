@@ -43,7 +43,13 @@ const samples = [
 	'Create a new note on the house pile, rake front yard',
 	'new pile called camping buy a new sleeping bag',
 	// "pile" as an ordinary word is not an instruction.
-	'remind me to pile the leaves by the back fence'
+	'remind me to pile the leaves by the back fence',
+	// Priority: high or low only when said outright, with the words left out of the title. The
+	// gutters have a deadline but no priority word, so they stay medium.
+	'urgent: call the plumber about the leak under the sink',
+	'low priority, reorganize the garage shelves',
+	'whenever, look into a cheaper phone plan',
+	'clean out the gutters before winter'
 ];
 
 const client = new Anthropic();
@@ -59,7 +65,7 @@ for (const text of samples) {
 		? `${result.pile.name}${result.pile.kind === 'new' ? ' (new)' : ''}`
 		: '—';
 	console.log(
-		`${String(ms).padStart(5)}ms  ${result.source.padEnd(8)}  ${pile.padEnd(22)}  ${result.title}`
+		`${String(ms).padStart(5)}ms  ${result.source.padEnd(8)}  ${result.priority.padEnd(6)}  ${pile.padEnd(22)}  ${result.title}`
 	);
 }
 console.log(

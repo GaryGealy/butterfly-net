@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import PrioritySelect from '#lib/components/PrioritySelect.svelte';
 	import { cardAge } from '#lib/card-age.ts';
 	import { focusById } from '#lib/focus.ts';
 	import { MAX_NOTES_LENGTH, MAX_SUBTASKS, MAX_TITLE_LENGTH } from '#lib/limits.ts';
@@ -188,6 +189,7 @@
 				{#each data.piles as pile (pile.id)}<option value={pile.id}>{pile.name}</option>{/each}
 			</select>
 		</div>
+		<PrioritySelect value={data.card.priority} />
 		<div>
 			<label for="card-notes" class="block text-sm font-bold text-ink-soft">Notes</label>
 			<textarea

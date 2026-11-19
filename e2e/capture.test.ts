@@ -49,6 +49,40 @@ test('when the AI is down, the thought is still caught', async ({ page }) => {
 	);
 });
 
+test('saying "urgent" makes the card High, without the word in the title', async ({ page }) => {
+	await page.getByLabel('Catch a thought').fill('urgent fix the tap');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview.getByLabel('Title')).toHaveValue('fix the tap');
+	await expect(preview.getByRole('radio', { name: 'High' })).toBeChecked();
+	await preview.getByRole('button', { name: 'Save' }).click();
+
+	const row = page
+		.getByRole('region', { name: 'garden' })
+		.getByRole('listitem')
+		.filter({ hasText: 'fix the tap' });
+	await expect(row).toContainText('High priority');
+});
+
+test('when the AI is down the card is Medium, and picking Low saves it as Low', async ({
+	page
+}) => {
+	await page.getByLabel('Catch a thought').fill('[fail] Sweep the porch');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview.getByRole('radio', { name: 'Medium' })).toBeChecked();
+	await preview.getByText('Low', { exact: true }).click();
+	await expect(preview.getByRole('radio', { name: 'Low' })).toBeChecked();
+	await preview.getByLabel('Pile').selectOption({ label: 'house' });
+	await preview.getByRole('button', { name: 'Save' }).click();
+
+	const row = page
+		.getByRole('region', { name: 'house' })
+		.getByRole('listitem')
+		.filter({ hasText: 'Sweep the porch' });
+	await expect(row).toContainText('Low priority');
+});
+
 test('cancel returns to the text without saving', async ({ page }) => {
 	await page.getByLabel('Catch a thought').fill('Paint the TIE fighter');
 	await page.getByRole('button', { name: 'Catch' }).click();

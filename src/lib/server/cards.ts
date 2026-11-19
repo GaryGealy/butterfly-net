@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, getTableColumns, gte, sql } from 'drizzle-orm';
 import { MAX_SUBTASKS } from '../limits';
+import type { Priority } from '../priority';
 import type { Db } from './db';
 import { cards, piles, subtasks } from './db/schema';
 import { NotFoundError, notFoundIfGone } from './errors';
@@ -15,12 +16,16 @@ export interface NewCard {
 	subtasks: string[];
 	/** An existing pile, or a new one; a "new" name matching a pile in any case reuses it. */
 	pile: CaptureSave['pile'];
+	/** The column default, medium, when omitted. */
+	priority?: Priority;
 }
 
 export interface CardEdit {
 	title: string;
 	notes: string | null;
 	pileId: string;
+	/** Left unchanged when omitted. */
+	priority?: Priority;
 }
 
 export interface SubtaskInput {
@@ -49,6 +54,7 @@ export interface CardSummary {
 	id: string;
 	title: string;
 	created_at: Date;
+	priority: Priority;
 }
 
 export interface PileWithCards extends Pile {
@@ -60,6 +66,7 @@ export interface CardDetail {
 	title: string;
 	notes: string | null;
 	status: 'active' | 'done';
+	priority: Priority;
 	pile_id: string;
 	pile_name: string;
 	created_at: Date;
@@ -163,6 +170,7 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 		pile_id: pileId,
 		title: input.title,
 		notes: input.notes,
+		priority: input.priority,
 		search_id: nextSearchId
 	});
 	const rest = [
@@ -188,6 +196,7 @@ function cardQuery(db: Db, userId: string, cardId: string) {
 			title: cards.title,
 			notes: cards.notes,
 			status: cards.status,
+			priority: cards.priority,
 			pile_id: cards.pile_id,
 			pile_name: piles.name,
 			created_at: cards.created_at,
@@ -265,7 +274,7 @@ export async function saveCard(
 		db.batch([
 			db
 				.update(cards)
-				.set({ title: edit.title, notes: edit.notes, pile_id: pile.id })
+				.set({ title: edit.title, notes: edit.notes, pile_id: pile.id, priority: edit.priority })
 				.where(ownCard(userId, cardId))
 				.returning({ id: cards.id }),
 			db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
@@ -394,7 +403,8 @@ export async function listActiveCardsByPile(db: Db, userId: string): Promise<Pil
 				id: cards.id,
 				title: cards.title,
 				pile_id: cards.pile_id,
-				created_at: cards.created_at
+				created_at: cards.created_at,
+				priority: cards.priority
 			})
 			.from(cards)
 			.where(and(eq(cards.user_id, userId), eq(cards.status, 'active')))
@@ -405,7 +415,7 @@ export async function listActiveCardsByPile(db: Db, userId: string): Promise<Pil
 		...pile,
 		cards: active
 			.filter((card) => card.pile_id === pile.id)
-			.map(({ id, title, created_at }) => ({ id, title, created_at }))
+			.map(({ id, title, created_at, priority }) => ({ id, title, created_at, priority }))
 	}));
 }
 

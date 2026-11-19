@@ -3,6 +3,7 @@ import { MAX_EMAIL_LENGTH, MAX_NOTES_LENGTH } from '../limits';
 import {
 	captureSaveSchema,
 	appendStepsSchema,
+	cardEditSchema,
 	credentialsSchema,
 	inviteLabelSchema,
 	subtaskRowsFromForm,
@@ -52,7 +53,8 @@ describe('captureSaveSchema', () => {
 			title: 'Paint the X-wing',
 			notes: null,
 			subtasks: [],
-			pile: { kind: 'existing', id: 'p1' }
+			pile: { kind: 'existing', id: 'p1' },
+			priority: 'medium'
 		});
 		expect(
 			captureSaveSchema.parse({ ...base, pile: { kind: 'new', name: ' garden ' } }).pile
@@ -75,6 +77,17 @@ describe('captureSaveSchema', () => {
 		expect(
 			captureSaveSchema.safeParse({ ...base, pile: { kind: 'new', name: 'x'.repeat(41) } }).success
 		).toBe(false);
+	});
+
+	it('defaults a missing priority to medium', () => {
+		const pile = { kind: 'existing', id: 'p1' } as const;
+		expect(captureSaveSchema.parse({ ...base, pile }).priority).toBe('medium');
+		expect(captureSaveSchema.parse({ ...base, pile, priority: 'high' }).priority).toBe('high');
+	});
+
+	it('rejects a priority that is not low, medium or high', () => {
+		const pile = { kind: 'existing', id: 'p1' } as const;
+		expect(captureSaveSchema.safeParse({ ...base, pile, priority: 'urgent' }).success).toBe(false);
 	});
 
 	it('caps notes at 1000 characters', () => {
@@ -187,5 +200,20 @@ describe('inviteLabelSchema', () => {
 		const result = inviteLabelSchema.safeParse('x'.repeat(61));
 		expect(result.success).toBe(false);
 		expect(result.error?.issues[0].message).toBe('Label must be 60 characters or fewer');
+	});
+});
+
+describe('cardEditSchema', () => {
+	const base = { title: 'Fix the gate', notes: '', pileId: 'p1' };
+
+	it('defaults a missing priority to medium', () => {
+		expect(cardEditSchema.parse(base).priority).toBe('medium');
+	});
+
+	it('accepts low, medium and high and rejects anything else', () => {
+		for (const priority of ['low', 'medium', 'high']) {
+			expect(cardEditSchema.parse({ ...base, priority }).priority).toBe(priority);
+		}
+		expect(cardEditSchema.safeParse({ ...base, priority: 'urgent' }).success).toBe(false);
 	});
 });

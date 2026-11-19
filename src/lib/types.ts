@@ -1,3 +1,5 @@
+import type { Priority } from './priority';
+
 export interface PileRef {
 	id: string;
 	name: string;
@@ -11,5 +13,6 @@ export interface ParseResult {
 	pile: ParsedPile | null;
 	notes: string | null;
 	subtasks: string[];
+	priority: Priority;
 	source: 'claude' | 'fallback' | 'limit';
 }

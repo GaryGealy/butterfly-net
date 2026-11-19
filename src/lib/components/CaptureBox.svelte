@@ -5,10 +5,12 @@
 		MAX_NOTES_LENGTH,
 		MAX_TITLE_LENGTH
 	} from '../limits';
+	import { DEFAULT_PRIORITY, type Priority } from '../priority';
 	import type { ParseResult, PileRef } from '../types.ts';
 	import { NEW_PILE_COLOR, NO_PILE_COLOR, pileColor } from '../pile-color';
 	import Butterfly from './Butterfly.svelte';
 	import NetIcon from './NetIcon.svelte';
+	import PrioritySelect from './PrioritySelect.svelte';
 
 	interface Props {
 		piles: PileRef[];
@@ -23,6 +25,7 @@
 	let title = $state('');
 	let notes = $state('');
 	let subtasks = $state<string[]>([]);
+	let priority = $state<Priority>(DEFAULT_PRIORITY);
 	// A pile id, `new:<name>` for a proposed pile, or '' until chosen.
 	let pileChoice = $state('');
 	let proposedPile = $state<string | null>(null);
@@ -66,6 +69,7 @@
 			pile: null,
 			notes: long ? raw : null,
 			subtasks: [],
+			priority: DEFAULT_PRIORITY,
 			source: 'fallback'
 		};
 	}
@@ -74,6 +78,7 @@
 		title = result.title;
 		notes = result.notes ?? '';
 		subtasks = [...result.subtasks];
+		priority = result.priority ?? DEFAULT_PRIORITY;
 		proposedPile = result.pile?.kind === 'new' ? result.pile.name : null;
 		pileChoice =
 			result.pile?.kind === 'existing'
@@ -124,7 +129,8 @@
 					title,
 					notes: notes || null,
 					subtasks: subtasks.map((t) => t.trim()).filter(Boolean),
-					pile
+					pile,
+					priority
 				})
 			});
 			if (!response.ok) throw new Error(`save failed: ${response.status}`);
@@ -145,6 +151,7 @@
 		title = '';
 		notes = '';
 		subtasks = [];
+		priority = DEFAULT_PRIORITY;
 		pileChoice = '';
 		proposedPile = null;
 		notice = null;
@@ -290,6 +297,7 @@
 				{#each piles as pile (pile.id)}<option value={pile.id}>{pile.name}</option>{/each}
 			</select>
 		</div>
+		<PrioritySelect inline bind:value={priority} />
 		<div class="flex flex-wrap gap-2">
 			<button type="submit" disabled={phase === 'saving' || !pileChoice} class="btn-primary"
 				>{phase === 'saving' ? 'Saving…' : 'Save'}</button

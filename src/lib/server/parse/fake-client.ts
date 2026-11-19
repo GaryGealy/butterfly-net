@@ -16,12 +16,18 @@ export function fakeParseClient(): Anthropic {
 			: /game/.test(lower)
 				? 'video games'
 				: 'garden';
+		const priority = /\burgent\b/.test(lower)
+			? 'high'
+			: /\bwhenever\b/.test(lower)
+				? 'low'
+				: 'medium';
 		const body = {
-			title: text.trim(),
+			title: text.replace(/\b(urgent|whenever)\b[:,]?\s*/gi, '').trim(),
 			pile,
 			isNewPile: pile === 'garden',
 			notes: '',
-			subtasks: []
+			subtasks: [],
+			priority
 		};
 		return { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify(body) }] };
 	};

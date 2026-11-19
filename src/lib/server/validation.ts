@@ -12,6 +12,7 @@ import {
 	MAX_SUBTASKS,
 	MAX_TITLE_LENGTH
 } from '../limits';
+import { DEFAULT_PRIORITY, PRIORITIES } from '../priority';
 
 export const credentialsSchema = z.object({
 	email: z
@@ -73,7 +74,8 @@ export const captureSaveSchema = z.object({
 	pile: z.discriminatedUnion('kind', [
 		z.object({ kind: z.literal('existing'), id: z.string().min(1) }),
 		z.object({ kind: z.literal('new'), name: pileNameSchema })
-	])
+	]),
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
 });
 
 export type CaptureSave = z.infer<typeof captureSaveSchema>;
@@ -81,7 +83,8 @@ export type CaptureSave = z.infer<typeof captureSaveSchema>;
 export const cardEditSchema = z.object({
 	title: titleSchema,
 	notes: notesSchema,
-	pileId: z.string().min(1, 'Choose a pile')
+	pileId: z.string().min(1, 'Choose a pile'),
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
 });
 
 /**

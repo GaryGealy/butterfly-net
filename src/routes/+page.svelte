@@ -4,6 +4,8 @@
 	import { resolve } from '$app/paths';
 	import Butterfly from '#lib/components/Butterfly.svelte';
 	import CaptureBox from '#lib/components/CaptureBox.svelte';
+	import PriorityIcon from '#lib/components/PriorityIcon.svelte';
+	import { PRIORITY_LABEL } from '#lib/priority.ts';
 	import { cardAge, type AgeStage } from '#lib/card-age.ts';
 	import { focusById, neighbourFocusId } from '#lib/focus.ts';
 	import { pileColor } from '#lib/pile-color.ts';
@@ -193,6 +195,15 @@
 									</svg>
 								</button>
 							</form>
+							{#if card.priority !== 'medium'}
+								<span
+									title={`${PRIORITY_LABEL[card.priority]} priority`}
+									class="flex shrink-0 {card.priority === 'high' ? 'text-red-700' : 'text-muted'}"
+								>
+									<PriorityIcon priority={card.priority} class="size-5" />
+									<span class="sr-only">{PRIORITY_LABEL[card.priority]} priority</span>
+								</span>
+							{/if}
 							<a
 								id={`card-${card.id}`}
 								draggable="false"

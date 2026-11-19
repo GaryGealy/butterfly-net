@@ -3,6 +3,7 @@ import { MAX_EMAIL_LENGTH, MAX_NOTES_LENGTH } from '../limits';
 import {
 	captureSaveSchema,
 	appendStepsSchema,
+	cardEditSchema,
 	credentialsSchema,
 	inviteLabelSchema,
 	subtaskRowsFromForm,
@@ -187,5 +188,20 @@ describe('inviteLabelSchema', () => {
 		const result = inviteLabelSchema.safeParse('x'.repeat(61));
 		expect(result.success).toBe(false);
 		expect(result.error?.issues[0].message).toBe('Label must be 60 characters or fewer');
+	});
+});
+
+describe('cardEditSchema', () => {
+	const base = { title: 'Fix the gate', notes: '', pileId: 'p1' };
+
+	it('defaults a missing priority to medium', () => {
+		expect(cardEditSchema.parse(base).priority).toBe('medium');
+	});
+
+	it('accepts low, medium and high and rejects anything else', () => {
+		for (const priority of ['low', 'medium', 'high']) {
+			expect(cardEditSchema.parse({ ...base, priority }).priority).toBe(priority);
+		}
+		expect(cardEditSchema.safeParse({ ...base, priority: 'urgent' }).success).toBe(false);
 	});
 });

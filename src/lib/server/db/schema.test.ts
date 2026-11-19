@@ -112,4 +112,31 @@ describe('migrations', () => {
 			rmSync(old, { recursive: true, force: true });
 		}
 	});
+
+	it('existing cards become medium priority', () => {
+		const old = migrationsThrough('0006_hard_blob');
+		const sqlite = new Database(':memory:');
+		sqlite.pragma('foreign_keys = ON');
+		const local = drizzle(sqlite, { schema });
+		try {
+			migrate(local, { migrationsFolder: old });
+			sqlite.exec(`
+				INSERT INTO users (id, email, password_hash, created_at) VALUES ('u1', 'a@test.dev', 'x', 0);
+				INSERT INTO piles (id, user_id, name, sort_order, created_at) VALUES ('p1', 'u1', 'house', 0, 0);
+				INSERT INTO cards (id, user_id, pile_id, title, notes, status, created_at)
+					VALUES ('c1', 'u1', 'p1', 'Replace furnace filters', NULL, 'active', 0),
+					       ('c2', 'u1', 'p1', 'Clean gutters', NULL, 'done', 1);
+			`);
+
+			migrate(local, { migrationsFolder: 'drizzle' });
+
+			expect(sqlite.prepare('SELECT id, priority FROM cards ORDER BY id').all()).toEqual([
+				{ id: 'c1', priority: 'medium' },
+				{ id: 'c2', priority: 'medium' }
+			]);
+		} finally {
+			sqlite.close();
+			rmSync(old, { recursive: true, force: true });
+		}
+	});
 });

@@ -114,6 +114,27 @@ test("another user's card cannot be changed through its actions", async ({ page,
 	await expect(page.getByRole('button', { name: 'Mark done' })).toBeVisible();
 });
 
+test("change a card's priority on its page", async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Sand the hull');
+	const row = page.getByRole('listitem').filter({ hasText: 'Sand the hull' });
+	await expect(row).not.toContainText('priority');
+
+	await page.getByRole('link', { name: 'Sand the hull' }).click();
+	await waitForHydration(page);
+	await expect(page.getByRole('radio', { name: 'Medium' })).toBeChecked();
+	await page.getByText('Low', { exact: true }).click();
+	await expect(page.getByRole('radio', { name: 'Low' })).toBeChecked();
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('status')).toHaveText('Saved');
+
+	await page.reload();
+	await waitForHydration(page);
+	await expect(page.getByRole('radio', { name: 'Low' })).toBeChecked();
+	await page.getByRole('link', { name: '← Piles' }).click();
+	await expect(row).toContainText('Low priority');
+});
+
 test('a fresh card shows no age and says it was caught today', async ({ page }) => {
 	await signUp(page);
 	await capture(page, 'Sand the hull seams');

@@ -225,6 +225,18 @@ describe('saveCard', () => {
 		]);
 	});
 
+	it('changes the priority, and keeps it when the edit has none', async () => {
+		const id = await createCard(db, userId, newCard());
+		expect((await getCard(db, userId, id))?.priority).toBe('medium');
+
+		const edit = { title: 'Fix the gate latch', notes: null, pileId: house.id };
+		await saveCard(db, userId, id, { ...edit, priority: 'low' }, []);
+		expect((await getCard(db, userId, id))?.priority).toBe('low');
+
+		await saveCard(db, userId, id, edit, []);
+		expect((await getCard(db, userId, id))?.priority).toBe('low');
+	});
+
 	it("throws NotFoundError for another user's card and changes nothing", async () => {
 		const id = await createCard(db, userId, newCard({ subtasks: ['keep'] }));
 		const intruder = await createTestUser(db);
@@ -408,6 +420,31 @@ describe('listing', () => {
 		]);
 		expect(grouped[0].cards.map((c) => c.id)).toEqual([newer, older]);
 		expect(grouped[1].cards).toEqual([]);
+	});
+
+	it('listActiveCardsByPile and cardPageData return the priority', async () => {
+		const urgent = await createCard(db, userId, newCard({ title: 'urgent' }));
+		await tick();
+		const plain = await createCard(db, userId, newCard({ title: 'plain' }));
+		await saveCard(
+			db,
+			userId,
+			urgent,
+			{
+				title: 'urgent',
+				notes: null,
+				pileId: house.id,
+				priority: 'high'
+			},
+			[]
+		);
+
+		const [houseCards] = await listActiveCardsByPile(db, userId);
+		expect(houseCards.cards.map((c) => [c.id, c.priority])).toEqual([
+			[plain, 'medium'],
+			[urgent, 'high']
+		]);
+		expect((await cardPageData(db, userId, urgent))?.card.priority).toBe('high');
 	});
 
 	it('lists archived cards, most recently done first', async () => {

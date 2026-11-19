@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PRIORITIES } from '../../priority';
 
 /** JSON Schema sent to Claude as the structured-output format. */
 export const PARSE_JSON_SCHEMA: Record<string, unknown> = {
@@ -15,9 +16,14 @@ export const PARSE_JSON_SCHEMA: Record<string, unknown> = {
 			type: 'array',
 			items: { type: 'string' },
 			description: 'Steps or items the text explicitly lists, otherwise empty'
+		},
+		priority: {
+			type: 'string',
+			enum: [...PRIORITIES],
+			description: 'high or low only when the user explicitly says so, otherwise medium'
 		}
 	},
-	required: ['title', 'pile', 'isNewPile', 'notes', 'subtasks'],
+	required: ['title', 'pile', 'isNewPile', 'notes', 'subtasks', 'priority'],
 	additionalProperties: false
 };
 
@@ -27,5 +33,6 @@ export const parsedCardSchema = z.object({
 	pile: z.string(),
 	isNewPile: z.boolean(),
 	notes: z.string(),
-	subtasks: z.array(z.string())
+	subtasks: z.array(z.string()),
+	priority: z.enum(PRIORITIES)
 });

@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ParseResult, PileRef } from '../../types';
 import { MAX_NOTES_LENGTH, MAX_PILE_NAME_LENGTH, MAX_TITLE_LENGTH } from '../../limits';
+import { DEFAULT_PRIORITY } from '../../priority';
 import { PARSE_JSON_SCHEMA, parsedCardSchema } from './schema';
 
 export const PARSE_MODEL = 'claude-haiku-5-5';
@@ -16,6 +17,7 @@ From the user's text, produce:
 - pile: if the user says which pile to use ("on the house pile", "add to work stuff", "new pile called camping"), use that pile: the matching name from the list below, or that name as a new pile with isNewPile set to true. Leave the instruction itself out of the title and notes. Otherwise, the exact name of a pile from the list below when that pile is clearly about the note's subject. Otherwise the note belongs to an area of life none of the piles covers: set pile to a name for that area and isNewPile to true. Don't stretch a pile to hold a note it isn't about. A new pile name is one or two lowercase words naming the area, not the task: "car" for an oil change, "health" for a dentist visit, "food" for a restaurant to try. Never leave pile empty.
 - notes: any extra useful detail that doesn't belong in the title (reasons, specifics, context), tidied but not embellished; otherwise an empty string.
 - subtasks: only steps or items the text explicitly lists, otherwise an empty array.
+- priority: "high" only when the user says it's urgent, important, high priority or needed asap; "low" only when they say low priority, whenever or no rush. Otherwise "medium" — never guess it from the subject or a deadline. Leave those words out of the title and notes.
 
 Never invent details the user didn't write.`;
 
@@ -78,6 +80,7 @@ export function interpretResponse(response: ParseResponse, piles: PileRef[]): Pa
 			.filter(Boolean)
 			.slice(0, MAX_PARSED_SUBTASKS)
 			.map((s) => clamp(s, MAX_TITLE_LENGTH)),
+		priority: parsed.data.priority,
 		source: 'claude'
 	};
 }
@@ -91,6 +94,7 @@ export function fallbackResult(text: string): ParseResult {
 		pile: null,
 		notes: truncated ? trimmed.slice(0, MAX_NOTES_LENGTH) : null,
 		subtasks: [],
+		priority: DEFAULT_PRIORITY,
 		source: 'fallback'
 	};
 }

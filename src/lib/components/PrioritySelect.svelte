@@ -2,13 +2,22 @@
 	import { DEFAULT_PRIORITY, PRIORITIES, PRIORITY_LABEL, type Priority } from '../priority';
 	import PriorityIcon from './PriorityIcon.svelte';
 
-	let { value = $bindable(DEFAULT_PRIORITY) }: { value?: Priority } = $props();
+	let {
+		value = $bindable(DEFAULT_PRIORITY),
+		inline = false
+	}: { value?: Priority; inline?: boolean } = $props();
 </script>
 
 <fieldset class="min-w-0">
-	<legend class="block text-sm font-bold text-ink-soft">Priority</legend>
+	<legend
+		class={inline
+			? 'float-left mr-3 leading-11 font-bold text-ink-soft'
+			: 'block text-sm font-bold text-ink-soft'}>Priority</legend
+	>
 	<span
-		class="mt-1 inline-flex max-w-full flex-wrap rounded-3xl border border-line bg-white p-[3px] shadow-chip"
+		class="{inline
+			? ''
+			: 'mt-1'} inline-flex max-w-full flex-wrap rounded-3xl border border-line bg-white p-[3px] shadow-chip"
 	>
 		{#each PRIORITIES as priority (priority)}
 			<label

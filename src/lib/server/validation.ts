@@ -74,7 +74,8 @@ export const captureSaveSchema = z.object({
 	pile: z.discriminatedUnion('kind', [
 		z.object({ kind: z.literal('existing'), id: z.string().min(1) }),
 		z.object({ kind: z.literal('new'), name: pileNameSchema })
-	])
+	]),
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
 });
 
 export type CaptureSave = z.infer<typeof captureSaveSchema>;

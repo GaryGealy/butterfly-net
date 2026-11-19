@@ -16,6 +16,8 @@ export interface NewCard {
 	subtasks: string[];
 	/** An existing pile, or a new one; a "new" name matching a pile in any case reuses it. */
 	pile: CaptureSave['pile'];
+	/** The column default, medium, when omitted. */
+	priority?: Priority;
 }
 
 export interface CardEdit {
@@ -168,6 +170,7 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 		pile_id: pileId,
 		title: input.title,
 		notes: input.notes,
+		priority: input.priority,
 		search_id: nextSearchId
 	});
 	const rest = [

@@ -139,4 +139,29 @@ describe('migrations', () => {
 			rmSync(old, { recursive: true, force: true });
 		}
 	});
+
+	it('existing cards have no due date', () => {
+		const old = migrationsThrough('0007_absurd_luke_cage');
+		const sqlite = new Database(':memory:');
+		sqlite.pragma('foreign_keys = ON');
+		const local = drizzle(sqlite, { schema });
+		try {
+			migrate(local, { migrationsFolder: old });
+			sqlite.exec(`
+				INSERT INTO users (id, email, password_hash, created_at) VALUES ('u1', 'a@test.dev', 'x', 0);
+				INSERT INTO piles (id, user_id, name, sort_order, created_at) VALUES ('p1', 'u1', 'house', 0, 0);
+				INSERT INTO cards (id, user_id, pile_id, title, created_at)
+					VALUES ('c1', 'u1', 'p1', 'Replace furnace filters', 0);
+			`);
+
+			migrate(local, { migrationsFolder: 'drizzle' });
+
+			expect(sqlite.prepare('SELECT id, due_on FROM cards').all()).toEqual([
+				{ id: 'c1', due_on: null }
+			]);
+		} finally {
+			sqlite.close();
+			rmSync(old, { recursive: true, force: true });
+		}
+	});
 });

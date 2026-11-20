@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { capture, signUp, waitForHydration } from './helpers';
+import { capture, localIsoDay, setDueOn, signUp, waitForHydration } from './helpers';
 
 test('edit a card: title, notes, pile, and subtasks', async ({ page }) => {
 	await signUp(page);
@@ -133,6 +133,80 @@ test("change a card's priority on its page", async ({ page }) => {
 	await expect(page.getByRole('radio', { name: 'Low' })).toBeChecked();
 	await page.getByRole('link', { name: '← Piles' }).click();
 	await expect(row).toContainText('Low priority');
+});
+
+test('set a due date on the card page and the board shows it', async ({ page }) => {
+	await signUp(page);
+	await capture(page, 'Mail the insurance form');
+	const row = page.getByRole('listitem').filter({ hasText: 'Mail the insurance form' });
+	await expect(row).not.toContainText('due');
+
+	await page.getByRole('link', { name: 'Mail the insurance form' }).click();
+	await waitForHydration(page);
+	await expect(page.getByLabel('Due')).toHaveValue('');
+	const day = localIsoDay(3);
+	await page.getByLabel('Due').fill(day);
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('status')).toHaveText('Saved');
+
+	await page.reload();
+	await waitForHydration(page);
+	await expect(page.getByLabel('Due')).toHaveValue(day);
+	await page.getByRole('link', { name: '← Piles' }).click();
+	const weekday = new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', {
+		weekday: 'short',
+		timeZone: 'UTC'
+	});
+	await expect(row).toContainText(weekday);
+	await expect(row.getByTitle(/^Due /)).toBeVisible();
+});
+
+test('clear the due date and the board label is gone', async ({ page }) => {
+	const email = await signUp(page);
+	await capture(page, 'Return the library books');
+	setDueOn(email, 'Return the library books', localIsoDay(1));
+	await page.reload();
+	const row = page.getByRole('listitem').filter({ hasText: 'Return the library books' });
+	await expect(row).toContainText('Tomorrow');
+
+	await page.getByRole('link', { name: 'Return the library books' }).click();
+	await waitForHydration(page);
+	await page.getByRole('button', { name: 'Clear' }).click();
+	await expect(page.getByLabel('Due')).toHaveValue('');
+	await page.getByRole('button', { name: 'Save changes' }).click();
+	await expect(page.getByRole('status')).toHaveText('Saved');
+
+	await page.getByRole('link', { name: '← Piles' }).click();
+	await expect(row).toBeVisible();
+	await expect(row).not.toContainText('Tomorrow');
+	await expect(row).not.toContainText('due');
+});
+
+test('a card due yesterday says Overdue on the board', async ({ page }) => {
+	const email = await signUp(page);
+	await capture(page, 'Pay the water bill');
+	setDueOn(email, 'Pay the water bill', localIsoDay(-1));
+	await page.reload();
+	const row = page.getByRole('listitem').filter({ hasText: 'Pay the water bill' });
+	await expect(row).toContainText('Overdue');
+	await expect(row.getByTitle(/^Overdue: was due /)).toBeVisible();
+});
+
+test('with 200% text on a phone, a due card with a long title does not widen the board', async ({
+	page
+}) => {
+	const email = await signUp(page);
+	const title = 'Call the plumber about the boiler pressure valve and the leaking radiator';
+	await capture(page, title, 'house');
+	setDueOn(email, title, localIsoDay(-1));
+	await page.setViewportSize({ width: 320, height: 800 });
+	await page.reload();
+	await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+	await expect(page.getByRole('listitem').filter({ hasText: 'Overdue' })).toBeVisible();
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBe(0);
 });
 
 test('a fresh card shows no age and says it was caught today', async ({ page }) => {

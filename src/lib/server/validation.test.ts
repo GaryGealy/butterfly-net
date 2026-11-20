@@ -216,4 +216,16 @@ describe('cardEditSchema', () => {
 		}
 		expect(cardEditSchema.safeParse({ ...base, priority: 'urgent' }).success).toBe(false);
 	});
+
+	it('takes a due date; "" and null clear it; a missing one stays undefined', () => {
+		expect(cardEditSchema.parse({ ...base, dueOn: '2026-11-27' }).dueOn).toBe('2026-11-27');
+		expect(cardEditSchema.parse({ ...base, dueOn: '' }).dueOn).toBeNull();
+		expect(cardEditSchema.parse({ ...base, dueOn: null }).dueOn).toBeNull();
+		expect(cardEditSchema.parse(base).dueOn).toBeUndefined();
+	});
+
+	it('rejects a due date that is not a real date', () => {
+		for (const dueOn of ['2026-02-30', 'friday', '11/27/2026'])
+			expect(cardEditSchema.safeParse({ ...base, dueOn }).success).toBe(false);
+	});
 });

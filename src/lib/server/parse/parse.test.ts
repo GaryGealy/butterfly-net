@@ -125,7 +125,8 @@ describe('interpretResponse', () => {
 		const many = Array.from({ length: 30 }, (_, i) => `step ${i}`);
 		const result = interpretResponse(
 			reply(card({ notes: '  gloss finish ', subtasks: [' sand ', '', ...many] })),
-			piles
+			piles,
+			TODAY
 		);
 		expect(result?.notes).toBe('gloss finish');
 		expect(result?.subtasks[0]).toBe('sand');

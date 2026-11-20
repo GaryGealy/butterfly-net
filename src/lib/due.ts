@@ -80,3 +80,15 @@ export function dueLabel(dueOn: string, today: string): DueLabel {
 				: format(dueOn, { month: 'short', day: 'numeric', year: 'numeric' });
 	return { text, tone: 'plain', title: `Due ${short}`, spoken: `due ${long}` };
 }
+
+/** "Friday", for the day YYYY-MM-DD. */
+export function weekdayName(day: string): string {
+	return format(day, { weekday: 'long' });
+}
+
+/** Whether `day` could be today somewhere on Earth: within a day of `now`'s UTC date. */
+export function isPlausibleToday(day: string, now: Date): boolean {
+	if (!isIsoDate(day)) return false;
+	const utc = toDay(now);
+	return day === utc || day === addDays(utc, -1) || day === addDays(utc, 1);
+}

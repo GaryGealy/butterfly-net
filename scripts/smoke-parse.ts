@@ -49,15 +49,26 @@ const samples = [
 	'urgent: call the plumber about the leak under the sink',
 	'low priority, reorganize the garage shelves',
 	'whenever, look into a cheaper phone plan',
-	'clean out the gutters before winter'
+	'clean out the gutters before winter',
+	// Due dates, with today fixed to Friday 2026-11-20: only a named day sets one, the words leave
+	// the title, and "before" a day is the day before it.
+	'send the insurance form by friday',
+	'call the vet tomorrow',
+	'pay rent before the 1st',
+	'book flights by the end of the month',
+	'next friday drop off the donation boxes',
+	'urgent: pay the water bill today'
 ];
+
+// A fixed Friday, so each sample's expected due date is known.
+const today = '2026-11-20';
 
 const client = new Anthropic();
 let fallbacks = 0;
 let newPiles = 0;
 for (const text of samples) {
 	const started = performance.now();
-	const result = await parseCapture(client, text, piles);
+	const result = await parseCapture(client, text, piles, today);
 	const ms = Math.round(performance.now() - started);
 	if (result.source === 'fallback') fallbacks++;
 	if (result.pile?.kind === 'new') newPiles++;
@@ -65,7 +76,7 @@ for (const text of samples) {
 		? `${result.pile.name}${result.pile.kind === 'new' ? ' (new)' : ''}`
 		: '—';
 	console.log(
-		`${String(ms).padStart(5)}ms  ${result.source.padEnd(8)}  ${result.priority.padEnd(6)}  ${pile.padEnd(22)}  ${result.title}`
+		`${String(ms).padStart(5)}ms  ${result.source.padEnd(8)}  ${result.priority.padEnd(6)}  ${(result.dueOn ?? '—').padEnd(10)}  ${pile.padEnd(22)}  ${result.title}`
 	);
 }
 console.log(

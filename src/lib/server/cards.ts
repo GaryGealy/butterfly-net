@@ -18,6 +18,8 @@ export interface NewCard {
 	pile: CaptureSave['pile'];
 	/** The column default, medium, when omitted. */
 	priority?: Priority;
+	/** YYYY-MM-DD, or none when omitted. */
+	dueOn?: string | null;
 }
 
 export interface CardEdit {
@@ -175,6 +177,7 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 		title: input.title,
 		notes: input.notes,
 		priority: input.priority,
+		due_on: input.dueOn ?? null,
 		search_id: nextSearchId
 	});
 	const rest = [

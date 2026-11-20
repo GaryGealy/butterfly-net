@@ -5,11 +5,13 @@
 		MAX_NOTES_LENGTH,
 		MAX_TITLE_LENGTH
 	} from '../limits';
+	import { localDay } from '../due';
 	import { DEFAULT_PRIORITY, type Priority } from '../priority';
 	import type { ParseResult, PileRef } from '../types.ts';
 	import { NEW_PILE_COLOR, NO_PILE_COLOR, pileColor } from '../pile-color';
 	import Butterfly from './Butterfly.svelte';
 	import NetIcon from './NetIcon.svelte';
+	import DueInput from './DueInput.svelte';
 	import PrioritySelect from './PrioritySelect.svelte';
 
 	interface Props {
@@ -26,6 +28,7 @@
 	let notes = $state('');
 	let subtasks = $state<string[]>([]);
 	let priority = $state<Priority>(DEFAULT_PRIORITY);
+	let dueOn = $state('');
 	// A pile id, `new:<name>` for a proposed pile, or '' until chosen.
 	let pileChoice = $state('');
 	let proposedPile = $state<string | null>(null);
@@ -70,6 +73,7 @@
 			notes: long ? raw : null,
 			subtasks: [],
 			priority: DEFAULT_PRIORITY,
+			dueOn: null,
 			source: 'fallback'
 		};
 	}
@@ -79,6 +83,7 @@
 		notes = result.notes ?? '';
 		subtasks = [...result.subtasks];
 		priority = result.priority ?? DEFAULT_PRIORITY;
+		dueOn = result.dueOn ?? '';
 		proposedPile = result.pile?.kind === 'new' ? result.pile.name : null;
 		pileChoice =
 			result.pile?.kind === 'existing'
@@ -105,7 +110,10 @@
 			const response = await fetch('/api/parse', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ text: raw })
+				body: JSON.stringify({
+					text: raw,
+					today: localDay(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone)
+				})
 			});
 			if (!response.ok) throw new Error(`parse failed: ${response.status}`);
 			showPreview(await response.json());
@@ -130,7 +138,8 @@
 					notes: notes || null,
 					subtasks: subtasks.map((t) => t.trim()).filter(Boolean),
 					pile,
-					priority
+					priority,
+					dueOn: dueOn || null
 				})
 			});
 			if (!response.ok) throw new Error(`save failed: ${response.status}`);
@@ -152,6 +161,7 @@
 		notes = '';
 		subtasks = [];
 		priority = DEFAULT_PRIORITY;
+		dueOn = '';
 		pileChoice = '';
 		proposedPile = null;
 		notice = null;
@@ -298,6 +308,7 @@
 			</select>
 		</div>
 		<PrioritySelect inline bind:value={priority} />
+		<DueInput inline bind:value={dueOn} />
 		<div class="flex flex-wrap gap-2">
 			<button type="submit" disabled={phase === 'saving' || !pileChoice} class="btn-primary"
 				>{phase === 'saving' ? 'Saving…' : 'Save'}</button

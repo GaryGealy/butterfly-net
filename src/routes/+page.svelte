@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Butterfly from '#lib/components/Butterfly.svelte';
 	import CaptureBox from '#lib/components/CaptureBox.svelte';
+	import DueLabel from '#lib/components/DueLabel.svelte';
 	import PriorityIcon from '#lib/components/PriorityIcon.svelte';
 	import { PRIORITY_LABEL } from '#lib/priority.ts';
 	import { cardAge, type AgeStage } from '#lib/card-age.ts';
@@ -204,22 +205,32 @@
 									<span class="sr-only">{PRIORITY_LABEL[card.priority]} priority</span>
 								</span>
 							{/if}
-							<a
-								id={`card-${card.id}`}
-								draggable="false"
-								href={resolve('/card/[id]', { id: card.id })}
-								class="flex min-h-11 min-w-0 flex-1 items-center leading-snug font-bold [overflow-wrap:anywhere] hover:underline"
-								>{card.title}</a
-							>
-							{#if age.label}
-								<span
-									title={`Caught ${age.phrase}`}
-									class="ml-auto shrink-0 pl-2 text-sm font-extrabold text-paper-ink"
-									><span aria-hidden="true">{age.label}</span><span class="sr-only"
-										>caught {age.phrase}</span
-									></span
+							<!-- When the row is too narrow (a phone, large text), the labels drop under the title. -->
+							<span class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+								<a
+									id={`card-${card.id}`}
+									draggable="false"
+									href={resolve('/card/[id]', { id: card.id })}
+									class="flex min-h-11 min-w-0 flex-[1_1_5rem] items-center leading-snug font-bold [overflow-wrap:anywhere] hover:underline"
+									>{card.title}</a
 								>
-							{/if}
+								{#if card.due_on || age.label}
+									<span class="ml-auto flex max-w-full min-w-0 flex-wrap items-center gap-1.5">
+										{#if card.due_on}
+											<DueLabel dueOn={card.due_on} today={data.today} />
+										{/if}
+										{#if age.label}
+											<span
+												title={`Caught ${age.phrase}`}
+												class="text-sm font-extrabold text-paper-ink"
+												><span aria-hidden="true">{age.label}</span><span class="sr-only"
+													>caught {age.phrase}</span
+												></span
+											>
+										{/if}
+									</span>
+								{/if}
+							</span>
 						</li>
 					{/each}
 				</ul>

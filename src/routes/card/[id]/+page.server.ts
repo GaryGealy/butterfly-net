@@ -39,7 +39,9 @@ export const actions: Actions = {
 			notes: form.get('notes'),
 			pileId: form.get('pileId'),
 			// zod's default only fills in undefined, and a missing field reads as null.
-			priority: form.get('priority') ?? undefined
+			priority: form.get('priority') ?? undefined,
+			// A missing field (a page from before due dates) leaves it alone; "" clears it.
+			dueOn: form.get('dueOn') ?? undefined
 		});
 		if (!parsed.success) return fail(400, { error: parsed.error.issues[0].message });
 

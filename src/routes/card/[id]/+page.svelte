@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import DueInput from '#lib/components/DueInput.svelte';
 	import PrioritySelect from '#lib/components/PrioritySelect.svelte';
 	import { cardAge } from '#lib/card-age.ts';
 	import { focusById } from '#lib/focus.ts';
@@ -190,6 +191,7 @@
 			</select>
 		</div>
 		<PrioritySelect value={data.card.priority} />
+		<DueInput name="dueOn" value={data.card.due_on ?? ''} />
 		<div>
 			<label for="card-notes" class="block text-sm font-bold text-ink-soft">Notes</label>
 			<textarea

@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import Butterfly from '#lib/components/Butterfly.svelte';
+	import { TZ_COOKIE } from '#lib/due.ts';
 	import type { LayoutProps } from './$types';
 
 	let { data, children }: LayoutProps = $props();
@@ -11,6 +12,9 @@
 	// Lets e2e tests wait until hydration is done before touching the page.
 	onMount(() => {
 		document.documentElement.dataset.hydrated = '';
+		// So the server can tell which day is "today" for this user when it draws due dates.
+		const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		document.cookie = `${TZ_COOKIE}=${encodeURIComponent(zone)}; path=/; max-age=31536000; samesite=lax`;
 	});
 
 	const links: { href: '/' | '/search' | '/archive' | '/piles'; label: string }[] = [

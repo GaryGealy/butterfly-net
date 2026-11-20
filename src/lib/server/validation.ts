@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { SubtaskInput } from './cards';
 
+import { isIsoDate } from '../due';
 import { httpUrl } from './links';
 import {
 	MAX_BREAKDOWN_STEPS,
@@ -80,11 +81,19 @@ export const captureSaveSchema = z.object({
 
 export type CaptureSave = z.infer<typeof captureSaveSchema>;
 
+/** A due date: "" or null means none; anything else must be a real YYYY-MM-DD date. */
+export const dueOnSchema = z
+	.string()
+	.nullable()
+	.transform((value) => value || null)
+	.refine((value) => value === null || isIsoDate(value), 'Due date must be a real date');
+
 export const cardEditSchema = z.object({
 	title: titleSchema,
 	notes: notesSchema,
 	pileId: z.string().min(1, 'Choose a pile'),
-	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY),
+	dueOn: dueOnSchema.optional()
 });
 
 /**

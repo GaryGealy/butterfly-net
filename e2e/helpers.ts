@@ -120,3 +120,15 @@ export function localIsoDay(offset = 0): string {
 	const pad = (n: number) => String(n).padStart(2, '0');
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+
+/** Backdates when the user's card with this title was caught, straight in the e2e database. */
+export function setCaughtDaysAgo(email: string, title: string, days: number): void {
+	const db = openE2eDb();
+	try {
+		db.prepare(
+			`UPDATE cards SET created_at = ? WHERE title = ? AND user_id = (SELECT id FROM users WHERE email = ?)`
+		).run(Date.now() - days * 24 * 60 * 60 * 1000, title, email);
+	} finally {
+		db.close();
+	}
+}

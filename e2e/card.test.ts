@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { capture, localIsoDay, setDueOn, signUp, waitForHydration } from './helpers';
+import {
+	capture,
+	localIsoDay,
+	setCaughtDaysAgo,
+	setDueOn,
+	signUp,
+	waitForHydration
+} from './helpers';
 
 test('edit a card: title, notes, pile, and subtasks', async ({ page }) => {
 	await signUp(page);
@@ -190,6 +197,36 @@ test('a card due yesterday says Overdue on the board', async ({ page }) => {
 	const row = page.getByRole('listitem').filter({ hasText: 'Pay the water bill' });
 	await expect(row).toContainText('Overdue');
 	await expect(row.getByTitle(/^Overdue: was due /)).toBeVisible();
+});
+
+test('a due card shows its due label instead of its age', async ({ page }) => {
+	const email = await signUp(page);
+	await capture(page, 'Trim pecan trees', 'house');
+	await capture(page, 'Clean the garage', 'house');
+	for (const title of ['Trim pecan trees', 'Clean the garage']) setCaughtDaysAgo(email, title, 30);
+	setDueOn(email, 'Trim pecan trees', localIsoDay(1));
+	await page.reload();
+
+	const due = page.getByRole('listitem').filter({ hasText: 'Trim pecan trees' });
+	await expect(due).toContainText('Tomorrow');
+	await expect(due).not.toContainText('4w');
+	await expect(due).toHaveAttribute('data-age', 'fresh');
+
+	const undated = page.getByRole('listitem').filter({ hasText: 'Clean the garage' });
+	await expect(undated).toContainText('4w');
+	await expect(undated).toHaveAttribute('data-age', 'yellow');
+});
+
+test('a short title keeps its due label on the same line', async ({ page }) => {
+	await page.setViewportSize({ width: 1100, height: 800 });
+	const email = await signUp(page);
+	await capture(page, 'Trim pecan trees', 'house');
+	setDueOn(email, 'Trim pecan trees', localIsoDay(1));
+	await page.reload();
+	const row = page.getByRole('listitem').filter({ hasText: 'Trim pecan trees' });
+	const title = await row.getByRole('link', { name: 'Trim pecan trees' }).boundingBox();
+	const label = await row.getByTitle('Due tomorrow').boundingBox();
+	expect(label!.y).toBeLessThan(title!.y + title!.height);
 });
 
 test('with 200% text on a phone, a due card with a long title does not widen the board', async ({

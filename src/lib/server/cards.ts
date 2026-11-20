@@ -18,6 +18,8 @@ export interface NewCard {
 	pile: CaptureSave['pile'];
 	/** The column default, medium, when omitted. */
 	priority?: Priority;
+	/** YYYY-MM-DD, or none when omitted. */
+	dueOn?: string | null;
 }
 
 export interface CardEdit {
@@ -26,6 +28,8 @@ export interface CardEdit {
 	pileId: string;
 	/** Left unchanged when omitted. */
 	priority?: Priority;
+	/** YYYY-MM-DD. Left unchanged when omitted; null clears it. */
+	dueOn?: string | null;
 }
 
 export interface SubtaskInput {
@@ -55,6 +59,7 @@ export interface CardSummary {
 	title: string;
 	created_at: Date;
 	priority: Priority;
+	due_on: string | null;
 }
 
 export interface PileWithCards extends Pile {
@@ -67,6 +72,7 @@ export interface CardDetail {
 	notes: string | null;
 	status: 'active' | 'done';
 	priority: Priority;
+	due_on: string | null;
 	pile_id: string;
 	pile_name: string;
 	created_at: Date;
@@ -171,6 +177,7 @@ export async function createCard(db: Db, userId: string, input: NewCard): Promis
 		title: input.title,
 		notes: input.notes,
 		priority: input.priority,
+		due_on: input.dueOn ?? null,
 		search_id: nextSearchId
 	});
 	const rest = [
@@ -197,6 +204,7 @@ function cardQuery(db: Db, userId: string, cardId: string) {
 			notes: cards.notes,
 			status: cards.status,
 			priority: cards.priority,
+			due_on: cards.due_on,
 			pile_id: cards.pile_id,
 			pile_name: piles.name,
 			created_at: cards.created_at,
@@ -274,7 +282,13 @@ export async function saveCard(
 		db.batch([
 			db
 				.update(cards)
-				.set({ title: edit.title, notes: edit.notes, pile_id: pile.id, priority: edit.priority })
+				.set({
+					title: edit.title,
+					notes: edit.notes,
+					pile_id: pile.id,
+					priority: edit.priority,
+					due_on: edit.dueOn
+				})
 				.where(ownCard(userId, cardId))
 				.returning({ id: cards.id }),
 			db.delete(subtasks).where(eq(subtasks.card_id, cardId)),
@@ -404,7 +418,8 @@ export async function listActiveCardsByPile(db: Db, userId: string): Promise<Pil
 				title: cards.title,
 				pile_id: cards.pile_id,
 				created_at: cards.created_at,
-				priority: cards.priority
+				priority: cards.priority,
+				due_on: cards.due_on
 			})
 			.from(cards)
 			.where(and(eq(cards.user_id, userId), eq(cards.status, 'active')))
@@ -415,7 +430,13 @@ export async function listActiveCardsByPile(db: Db, userId: string): Promise<Pil
 		...pile,
 		cards: active
 			.filter((card) => card.pile_id === pile.id)
-			.map(({ id, title, created_at, priority }) => ({ id, title, created_at, priority }))
+			.map(({ id, title, created_at, priority, due_on }) => ({
+				id,
+				title,
+				created_at,
+				priority,
+				due_on
+			}))
 	}));
 }
 

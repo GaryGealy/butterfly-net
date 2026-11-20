@@ -64,6 +64,8 @@ export const cards = sqliteTable(
 			.notNull()
 			.default('active'),
 		priority: text('priority', { enum: PRIORITIES }).notNull().default(DEFAULT_PRIORITY),
+		/** The day it's due, YYYY-MM-DD in the user's own calendar; null when none was given. */
+		due_on: text('due_on'),
 		created_at: createdAt(),
 		done_at: integer('done_at', { mode: 'timestamp_ms' }),
 		/** The card's rowid in cards_fts. */

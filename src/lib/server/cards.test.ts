@@ -83,6 +83,13 @@ describe('createCard and getCard', () => {
 		expect((await getCard(db, userId, plain))?.priority).toBe('medium');
 	});
 
+	it('createCard stores the due date, none by default', async () => {
+		const due = await createCard(db, userId, newCard({ dueOn: '2026-11-27' }));
+		const plain = await createCard(db, userId, newCard());
+		expect((await getCard(db, userId, due))?.due_on).toBe('2026-11-27');
+		expect((await getCard(db, userId, plain))?.due_on).toBeNull();
+	});
+
 	it("refuses another user's pile", async () => {
 		const other = await createTestUser(db);
 		await seedDefaultPiles(db, other);
@@ -242,6 +249,21 @@ describe('saveCard', () => {
 
 		await saveCard(db, userId, id, edit, []);
 		expect((await getCard(db, userId, id))?.priority).toBe('low');
+	});
+
+	it('sets a due date, keeps it when the edit has none, and clears it with null', async () => {
+		const id = await createCard(db, userId, newCard());
+		expect((await getCard(db, userId, id))?.due_on).toBeNull();
+
+		const edit = { title: 'Fix the gate latch', notes: null, pileId: house.id };
+		await saveCard(db, userId, id, { ...edit, dueOn: '2026-11-27' }, []);
+		expect((await getCard(db, userId, id))?.due_on).toBe('2026-11-27');
+
+		await saveCard(db, userId, id, edit, []);
+		expect((await getCard(db, userId, id))?.due_on).toBe('2026-11-27');
+
+		await saveCard(db, userId, id, { ...edit, dueOn: null }, []);
+		expect((await getCard(db, userId, id))?.due_on).toBeNull();
 	});
 
 	it("throws NotFoundError for another user's card and changes nothing", async () => {
@@ -452,6 +474,21 @@ describe('listing', () => {
 			[urgent, 'high']
 		]);
 		expect((await cardPageData(db, userId, urgent))?.card.priority).toBe('high');
+	});
+
+	it('listActiveCardsByPile and cardPageData return the due date', async () => {
+		const due = await createCard(db, userId, newCard({ title: 'due' }));
+		await tick();
+		const open = await createCard(db, userId, newCard({ title: 'open' }));
+		const edit = { title: 'due', notes: null, pileId: house.id, dueOn: '2026-12-01' };
+		await saveCard(db, userId, due, edit, []);
+
+		const [houseCards] = await listActiveCardsByPile(db, userId);
+		expect(houseCards.cards.map((c) => [c.id, c.due_on])).toEqual([
+			[open, null],
+			[due, '2026-12-01']
+		]);
+		expect((await cardPageData(db, userId, due))?.card.due_on).toBe('2026-12-01');
 	});
 
 	it('lists archived cards, most recently done first', async () => {

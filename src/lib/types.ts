@@ -14,5 +14,7 @@ export interface ParseResult {
 	notes: string | null;
 	subtasks: string[];
 	priority: Priority;
+	/** YYYY-MM-DD, or null when the text named no day. */
+	dueOn: string | null;
 	source: 'claude' | 'fallback' | 'limit';
 }

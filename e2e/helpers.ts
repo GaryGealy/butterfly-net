@@ -100,3 +100,35 @@ export function seedParseUsage(email: string, count: number): void {
 		db.close();
 	}
 }
+
+/** Sets the due date of the user's card with this title, straight in the e2e database. */
+export function setDueOn(email: string, title: string, day: string | null): void {
+	const db = openE2eDb();
+	try {
+		db.prepare(
+			`UPDATE cards SET due_on = ? WHERE title = ? AND user_id = (SELECT id FROM users WHERE email = ?)`
+		).run(day, title, email);
+	} finally {
+		db.close();
+	}
+}
+
+/** The browser's local date (the test machine's zone) `offset` days from today, YYYY-MM-DD. */
+export function localIsoDay(offset = 0): string {
+	const date = new Date();
+	date.setDate(date.getDate() + offset);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Backdates when the user's card with this title was caught, straight in the e2e database. */
+export function setCaughtDaysAgo(email: string, title: string, days: number): void {
+	const db = openE2eDb();
+	try {
+		db.prepare(
+			`UPDATE cards SET created_at = ? WHERE title = ? AND user_id = (SELECT id FROM users WHERE email = ?)`
+		).run(Date.now() - days * 24 * 60 * 60 * 1000, title, email);
+	} finally {
+		db.close();
+	}
+}

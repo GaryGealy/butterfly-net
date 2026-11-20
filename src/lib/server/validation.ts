@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { SubtaskInput } from './cards';
 
+import { isIsoDate } from '../due';
 import { httpUrl } from './links';
 import {
 	MAX_BREAKDOWN_STEPS,
@@ -67,6 +68,13 @@ export const pileNameSchema = z
 	.min(1, 'Pile name is required')
 	.max(MAX_PILE_NAME_LENGTH, `Pile names must be ${MAX_PILE_NAME_LENGTH} characters or fewer`);
 
+/** A due date: "" or null means none; anything else must be a real YYYY-MM-DD date. */
+export const dueOnSchema = z
+	.string()
+	.nullable()
+	.transform((value) => value || null)
+	.refine((value) => value === null || isIsoDate(value), 'Due date must be a real date');
+
 export const captureSaveSchema = z.object({
 	title: titleSchema,
 	notes: notesSchema,
@@ -75,7 +83,8 @@ export const captureSaveSchema = z.object({
 		z.object({ kind: z.literal('existing'), id: z.string().min(1) }),
 		z.object({ kind: z.literal('new'), name: pileNameSchema })
 	]),
-	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY),
+	dueOn: dueOnSchema.nullish().transform((value) => value ?? null)
 });
 
 export type CaptureSave = z.infer<typeof captureSaveSchema>;
@@ -84,7 +93,8 @@ export const cardEditSchema = z.object({
 	title: titleSchema,
 	notes: notesSchema,
 	pileId: z.string().min(1, 'Choose a pile'),
-	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY)
+	priority: z.enum(PRIORITIES).default(DEFAULT_PRIORITY),
+	dueOn: dueOnSchema.optional()
 });
 
 /**

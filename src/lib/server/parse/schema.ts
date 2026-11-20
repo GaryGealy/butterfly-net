@@ -21,9 +21,13 @@ export const PARSE_JSON_SCHEMA: Record<string, unknown> = {
 			type: 'string',
 			enum: [...PRIORITIES],
 			description: 'high or low only when the user explicitly says so, otherwise medium'
+		},
+		dueDate: {
+			type: 'string',
+			description: 'The day it is due as YYYY-MM-DD, or an empty string when the text names no day'
 		}
 	},
-	required: ['title', 'pile', 'isNewPile', 'notes', 'subtasks', 'priority'],
+	required: ['title', 'pile', 'isNewPile', 'notes', 'subtasks', 'priority', 'dueDate'],
 	additionalProperties: false
 };
 
@@ -34,5 +38,6 @@ export const parsedCardSchema = z.object({
 	isNewPile: z.boolean(),
 	notes: z.string(),
 	subtasks: z.array(z.string()),
-	priority: z.enum(PRIORITIES)
+	priority: z.enum(PRIORITIES),
+	dueDate: z.string()
 });

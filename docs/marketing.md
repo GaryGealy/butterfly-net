@@ -36,10 +36,11 @@ sits on its pile until you mark it done.
 
 ### What it deliberately doesn't do
 
-No due dates, reminders or recurring tasks, and no priority to pick. A card is
-Medium unless you say it's urgent or can wait ("urgent: call the plumber",
-"whenever"), and then it gets a small marker on its pile. Butterfly Net is for the
-someday-things you don't want to forget, not a calendar or a project manager.
+No reminders or recurring tasks, and nothing to fill in. A card is Medium unless
+you say it's urgent or can wait ("urgent: call the plumber", "whenever"), and has
+no due date unless you name a day ("by Friday", "tomorrow"). When you do, it gets
+a small label on its pile. Butterfly Net is for the someday-things you don't want
+to forget, not a calendar or a project manager.
 Leaving those out keeps capture faster than reaching for a paper card.
 
 ## Who it's for
@@ -77,7 +78,7 @@ squeaky hinge," "try an oil wash on the model," "look into a co-op game for game
 night." Those land on sticky notes and index cards and get lost. With Butterfly
 Net you press a hotkey, say the thought, and press Enter. Claude turns your
 ramble into a short card and puts it on the right pile, and the card stays there
-until you mark it done. No dates, no projects, no setup.
+until you mark it done. No projects, no forms, no setup.
 
 **60 seconds.** Add one line: it's built so it never loses a thought. If the
 AI is down, your words are still saved exactly as you said them. Finished cards
@@ -120,7 +121,7 @@ Butterfly Net.
 
 Butterfly Net is designed never to lose a thought: if the AI is slow or
 unavailable, the user's words are kept as typed and can be filed by hand. It
-deliberately leaves out due dates and reminders, and never asks for a priority,
+deliberately leaves out reminders, and never asks for a due date or a priority,
 to keep capture fast.
 
 **Availability.** Butterfly Net is available now at
@@ -164,10 +165,12 @@ to a searchable archive. It runs in any browser and installs like an app.
   ("one hotkey, one keypress").
 - Say "Claude sorts it, you confirm." Never suggest it saves or acts without
   you.
-- Don't promise reminders, due dates, offline capture, sharing or integrations.
+- Don't promise reminders, offline capture, sharing or integrations.
   v0.1.0 has none of them.
 - Priority is a marker you set by saying so ("urgent", "no rush"). Don't present
   it as sorting or ranking.
+- A due date is something you say ("by Friday"). It shows as a label, not a
+  reminder. Don't present it as scheduling.
 - Voice works through the device's own dictation (macOS Dictation on the Mac).
   Don't describe it as a built-in voice assistant.
 - Use real cards from the product as examples. Don't invent user counts,

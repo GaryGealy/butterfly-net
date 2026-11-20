@@ -1,13 +1,19 @@
 import { fail } from '@sveltejs/kit';
+import { localDay, TZ_COOKIE } from '../lib/due';
 import { listActiveCardsByPile, markDone, moveCard, reopenCard } from '../lib/server/cards';
 import { NotFoundError } from '../lib/server/errors';
 import { requireUser } from '../lib/server/routes';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, cookies }) => {
 	const user = requireUser(locals);
-	// `now` travels with the data so server and browser agree on each card's age.
-	return { piles: await listActiveCardsByPile(locals.db, user.id), now: new Date() };
+	// `now` and `today` travel with the data so server and browser agree on ages and due labels.
+	const now = new Date();
+	return {
+		piles: await listActiveCardsByPile(locals.db, user.id),
+		now,
+		today: localDay(now, cookies.get(TZ_COOKIE))
+	};
 };
 
 async function withCardId(

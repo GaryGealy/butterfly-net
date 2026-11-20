@@ -54,11 +54,22 @@ describe('captureSaveSchema', () => {
 			notes: null,
 			subtasks: [],
 			pile: { kind: 'existing', id: 'p1' },
-			priority: 'medium'
+			priority: 'medium',
+			dueOn: null
 		});
 		expect(
 			captureSaveSchema.parse({ ...base, pile: { kind: 'new', name: ' garden ' } }).pile
 		).toEqual({ kind: 'new', name: 'garden' });
+	});
+
+	it('takes a due date; a missing, null or empty one is null; a non-date is rejected', () => {
+		const pile = { kind: 'existing', id: 'p1' };
+		expect(captureSaveSchema.parse({ ...base, pile, dueOn: '2026-11-27' }).dueOn).toBe(
+			'2026-11-27'
+		);
+		for (const dueOn of [undefined, null, ''])
+			expect(captureSaveSchema.parse({ ...base, pile, dueOn }).dueOn).toBeNull();
+		expect(captureSaveSchema.safeParse({ ...base, pile, dueOn: 'friday' }).success).toBe(false);
 	});
 
 	it('rejects an empty title, a missing pile, and over-long fields', () => {
@@ -215,5 +226,17 @@ describe('cardEditSchema', () => {
 			expect(cardEditSchema.parse({ ...base, priority }).priority).toBe(priority);
 		}
 		expect(cardEditSchema.safeParse({ ...base, priority: 'urgent' }).success).toBe(false);
+	});
+
+	it('takes a due date; "" and null clear it; a missing one stays undefined', () => {
+		expect(cardEditSchema.parse({ ...base, dueOn: '2026-11-27' }).dueOn).toBe('2026-11-27');
+		expect(cardEditSchema.parse({ ...base, dueOn: '' }).dueOn).toBeNull();
+		expect(cardEditSchema.parse({ ...base, dueOn: null }).dueOn).toBeNull();
+		expect(cardEditSchema.parse(base).dueOn).toBeUndefined();
+	});
+
+	it('rejects a due date that is not a real date', () => {
+		for (const dueOn of ['2026-02-30', 'friday', '11/27/2026'])
+			expect(cardEditSchema.safeParse({ ...base, dueOn }).success).toBe(false);
 	});
 });

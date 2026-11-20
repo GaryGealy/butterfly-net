@@ -150,13 +150,15 @@
 				<ul class="space-y-2">
 					{#each pile.cards as card (card.id)}
 						{@const age = cardAge(card.created_at, data.now)}
+						<!-- A due date says more than age, so a due card drops the age label and tint. -->
+						{@const stage = card.due_on ? 'fresh' : age.stage}
 						<li
 							class="chip flex items-center gap-1 py-1.5 pr-3.5 pl-1.5 {PAPER[
-								age.stage
+								stage
 							]} {finePointer.current ? 'cursor-grab' : ''} {dragging?.id === card.id
 								? 'opacity-40'
 								: ''}"
-							data-age={age.stage}
+							data-age={stage}
 							draggable={finePointer.current}
 							ondragstart={(event) => {
 								event.dataTransfer?.setData('text/plain', card.id);
@@ -218,8 +220,7 @@
 									<span class="ml-auto flex max-w-full min-w-0 flex-wrap items-center gap-1.5">
 										{#if card.due_on}
 											<DueLabel dueOn={card.due_on} today={data.today} />
-										{/if}
-										{#if age.label}
+										{:else if age.label}
 											<span
 												title={`Caught ${age.phrase}`}
 												class="text-sm font-extrabold text-paper-ink"

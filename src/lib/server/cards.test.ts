@@ -83,6 +83,13 @@ describe('createCard and getCard', () => {
 		expect((await getCard(db, userId, plain))?.priority).toBe('medium');
 	});
 
+	it('createCard stores the due date, none by default', async () => {
+		const due = await createCard(db, userId, newCard({ dueOn: '2026-11-27' }));
+		const plain = await createCard(db, userId, newCard());
+		expect((await getCard(db, userId, due))?.due_on).toBe('2026-11-27');
+		expect((await getCard(db, userId, plain))?.due_on).toBeNull();
+	});
+
 	it("refuses another user's pile", async () => {
 		const other = await createTestUser(db);
 		await seedDefaultPiles(db, other);

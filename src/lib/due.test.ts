@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, dueLabel, isIsoDate, localDay } from './due';
+import { addDays, dueLabel, isIsoDate, isPlausibleToday, localDay, weekdayName } from './due';
 
 describe('isIsoDate', () => {
 	it('accepts real dates written YYYY-MM-DD', () => {
@@ -96,5 +96,26 @@ describe('dueLabel', () => {
 	it('more than a year out shows the year', () => {
 		expect(dueLabel('2027-11-21', today).text).toBe('Nov 21, 2027');
 		expect(dueLabel('2028-01-04', today).title).toBe('Due Tue, Jan 4, 2028');
+	});
+});
+
+describe('weekdayName', () => {
+	it('names the day of the week', () => {
+		expect(weekdayName('2026-11-20')).toBe('Friday');
+		expect(weekdayName('2027-01-04')).toBe('Monday');
+	});
+});
+
+describe('isPlausibleToday', () => {
+	const now = new Date('2026-11-20T12:00:00Z');
+
+	it("accepts the server's UTC date and the day either side, for any time zone", () => {
+		for (const day of ['2026-11-19', '2026-11-20', '2026-11-21'])
+			expect(isPlausibleToday(day, now)).toBe(true);
+	});
+
+	it('rejects a day two off, or something that is not a date', () => {
+		for (const day of ['2026-11-18', '2026-11-22', '2026-02-30', 'today'])
+			expect(isPlausibleToday(day, now)).toBe(false);
 	});
 });

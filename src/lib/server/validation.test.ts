@@ -54,11 +54,22 @@ describe('captureSaveSchema', () => {
 			notes: null,
 			subtasks: [],
 			pile: { kind: 'existing', id: 'p1' },
-			priority: 'medium'
+			priority: 'medium',
+			dueOn: null
 		});
 		expect(
 			captureSaveSchema.parse({ ...base, pile: { kind: 'new', name: ' garden ' } }).pile
 		).toEqual({ kind: 'new', name: 'garden' });
+	});
+
+	it('takes a due date; a missing, null or empty one is null; a non-date is rejected', () => {
+		const pile = { kind: 'existing', id: 'p1' };
+		expect(captureSaveSchema.parse({ ...base, pile, dueOn: '2026-11-27' }).dueOn).toBe(
+			'2026-11-27'
+		);
+		for (const dueOn of [undefined, null, ''])
+			expect(captureSaveSchema.parse({ ...base, pile, dueOn }).dueOn).toBeNull();
+		expect(captureSaveSchema.safeParse({ ...base, pile, dueOn: 'friday' }).success).toBe(false);
 	});
 
 	it('rejects an empty title, a missing pile, and over-long fields', () => {

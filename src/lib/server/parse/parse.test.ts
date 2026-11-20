@@ -14,6 +14,8 @@ import { PARSE_JSON_SCHEMA } from './schema';
 
 afterEach(() => vi.restoreAllMocks());
 
+const TODAY = '2026-11-20'; // a Friday
+
 const piles: PileRef[] = [
 	{ id: 'p-house', name: 'house' },
 	{ id: 'p-ideas', name: 'ideas' },
@@ -35,6 +37,7 @@ const card = (overrides: Record<string, unknown> = {}) => ({
 	notes: '',
 	subtasks: [],
 	priority: 'medium',
+	dueDate: '',
 	...overrides
 });
 
@@ -45,7 +48,7 @@ function clientReturning(result: Promise<unknown>) {
 
 describe('buildParseRequest', () => {
 	it('asks the configured model for structured output', () => {
-		const request = buildParseRequest('get resin', ['house', 'ideas']);
+		const request = buildParseRequest('get resin', ['house', 'ideas'], TODAY);
 		expect(request.model).toBe(PARSE_MODEL);
 		expect(PARSE_MODEL).toBe('claude-haiku-5-5');
 		expect(request.output_config.effort).toBe('low');
@@ -57,7 +60,7 @@ describe('buildParseRequest', () => {
 	});
 
 	it('tells Claude the note is often dictated', () => {
-		expect(buildParseRequest('get resin', ['house']).system).toMatch(/dictated/);
+		expect(buildParseRequest('get resin', ['house'], TODAY).system).toMatch(/dictated/);
 	});
 
 	it('asks for a priority and explains when to set it', () => {
@@ -67,31 +70,54 @@ describe('buildParseRequest', () => {
 		};
 		expect(schema.properties.priority.enum).toEqual(['low', 'medium', 'high']);
 		expect(schema.required).toContain('priority');
-		const system = buildParseRequest('get resin', ['house']).system;
+		const system = buildParseRequest('get resin', ['house'], TODAY).system;
 		expect(system).toMatch(/urgent/);
 		expect(system).toMatch(/no rush/);
+	});
+
+	it('asks for a due date, tells Claude today with its weekday, and explains when to set one', () => {
+		const schema = PARSE_JSON_SCHEMA as {
+			properties: Record<string, { type?: string }>;
+			required: string[];
+		};
+		expect(schema.properties.dueDate.type).toBe('string');
+		expect(schema.required).toContain('dueDate');
+		const system = buildParseRequest('get resin', ['house'], TODAY).system;
+		expect(system).toContain('Today is Friday, 2026-11-20.');
+		expect(system).toMatch(/dueDate/);
+		expect(system).toMatch(/before/);
+		expect(system).toMatch(/soon/);
 	});
 });
 
 describe('interpretResponse', () => {
 	it('maps an existing pile to its id', () => {
-		expect(interpretResponse(reply(card()), piles)).toEqual({
+		expect(interpretResponse(reply(card()), piles, TODAY)).toEqual({
 			title: 'Buy resin for the X-wing',
 			pile: { kind: 'existing', id: 'p-models', name: 'model building' },
 			notes: null,
 			subtasks: [],
 			priority: 'medium',
+			dueOn: null,
 			source: 'claude'
 		});
 	});
 
 	it('treats a case- or space-variant of an existing pile as that pile', () => {
-		const result = interpretResponse(reply(card({ pile: ' Ideas ', isNewPile: true })), piles);
+		const result = interpretResponse(
+			reply(card({ pile: ' Ideas ', isNewPile: true })),
+			piles,
+			TODAY
+		);
 		expect(result?.pile).toEqual({ kind: 'existing', id: 'p-ideas', name: 'ideas' });
 	});
 
 	it('proposes a new pile, even when Claude forgot to flag it', () => {
-		const result = interpretResponse(reply(card({ pile: 'garden', isNewPile: false })), piles);
+		const result = interpretResponse(
+			reply(card({ pile: 'garden', isNewPile: false })),
+			piles,
+			TODAY
+		);
 		expect(result?.pile).toEqual({ kind: 'new', name: 'garden' });
 	});
 
@@ -107,21 +133,43 @@ describe('interpretResponse', () => {
 	});
 
 	it("maps the reply's priority", () => {
-		expect(interpretResponse(reply(card({ priority: 'high' })), piles)?.priority).toBe('high');
-		expect(interpretResponse(reply(card({ priority: 'low' })), piles)?.priority).toBe('low');
+		expect(interpretResponse(reply(card({ priority: 'high' })), piles, TODAY)?.priority).toBe(
+			'high'
+		);
+		expect(interpretResponse(reply(card({ priority: 'low' })), piles, TODAY)?.priority).toBe('low');
+	});
+
+	it("maps the reply's due date, and an empty one to null", () => {
+		expect(interpretResponse(reply(card({ dueDate: '2026-11-27' })), piles, TODAY)?.dueOn).toBe(
+			'2026-11-27'
+		);
+		expect(interpretResponse(reply(card({ dueDate: TODAY })), piles, TODAY)?.dueOn).toBe(TODAY);
+		expect(interpretResponse(reply(card()), piles, TODAY)?.dueOn).toBeNull();
+	});
+
+	it('drops a past, impossible or far-off due date and keeps the rest of the reply', () => {
+		for (const dueDate of ['2026-11-19', '2026-02-30', 'friday', '2028-11-21']) {
+			const result = interpretResponse(reply(card({ dueDate })), piles, TODAY);
+			expect(result?.dueOn).toBeNull();
+			expect(result?.title).toBe('Buy resin for the X-wing');
+			expect(result?.pile).toEqual({ kind: 'existing', id: 'p-models', name: 'model building' });
+		}
+		expect(interpretResponse(reply(card({ dueDate: '2028-11-19' })), piles, TODAY)?.dueOn).toBe(
+			'2028-11-19'
+		);
 	});
 
 	it('rejects a reply with an unknown priority', () => {
-		expect(interpretResponse(reply(card({ priority: 'urgent' })), piles)).toBeNull();
+		expect(interpretResponse(reply(card({ priority: 'urgent' })), piles, TODAY)).toBeNull();
 	});
 
 	it('returns null for a refusal, a truncated reply, invalid JSON, or the wrong shape', () => {
-		expect(interpretResponse(reply(card(), 'refusal'), piles)).toBeNull();
-		expect(interpretResponse(reply(card(), 'max_tokens'), piles)).toBeNull();
-		expect(interpretResponse(reply('{not json'), piles)).toBeNull();
-		expect(interpretResponse(reply({ title: 'x' }), piles)).toBeNull();
-		expect(interpretResponse(reply(card({ title: '   ' })), piles)).toBeNull();
-		expect(interpretResponse({ stop_reason: 'end_turn', content: [] }, piles)).toBeNull();
+		expect(interpretResponse(reply(card(), 'refusal'), piles, TODAY)).toBeNull();
+		expect(interpretResponse(reply(card(), 'max_tokens'), piles, TODAY)).toBeNull();
+		expect(interpretResponse(reply('{not json'), piles, TODAY)).toBeNull();
+		expect(interpretResponse(reply({ title: 'x' }), piles, TODAY)).toBeNull();
+		expect(interpretResponse(reply(card({ title: '   ' })), piles, TODAY)).toBeNull();
+		expect(interpretResponse({ stop_reason: 'end_turn', content: [] }, piles, TODAY)).toBeNull();
 	});
 });
 
@@ -133,6 +181,7 @@ describe('fallbackResult', () => {
 			notes: null,
 			subtasks: [],
 			priority: 'medium',
+			dueOn: null,
 			source: 'fallback'
 		});
 	});
@@ -149,7 +198,7 @@ describe('fallbackResult', () => {
 describe('parseCapture', () => {
 	it("returns Claude's card and passes the timeout with no retries", async () => {
 		const { client, create } = clientReturning(Promise.resolve(reply(card())));
-		const result = await parseCapture(client, 'get resin for the x-wing', piles);
+		const result = await parseCapture(client, 'get resin for the x-wing', piles, TODAY);
 		expect(result.source).toBe('claude');
 		expect(create).toHaveBeenCalledWith(expect.objectContaining({ model: PARSE_MODEL }), {
 			timeout: PARSE_TIMEOUT_MS,
@@ -160,7 +209,7 @@ describe('parseCapture', () => {
 	it('falls back when the call throws (outage or timeout)', async () => {
 		const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 		const { client } = clientReturning(Promise.reject(new Error('Request timed out.')));
-		expect(await parseCapture(client, 'call the plumber', piles)).toEqual(
+		expect(await parseCapture(client, 'call the plumber', piles, TODAY)).toEqual(
 			fallbackResult('call the plumber')
 		);
 		expect(errorSpy).toHaveBeenCalled();
@@ -169,10 +218,10 @@ describe('parseCapture', () => {
 
 	it('falls back when the reply is unusable', async () => {
 		const { client } = clientReturning(Promise.resolve(reply(card(), 'refusal')));
-		expect((await parseCapture(client, 'call the plumber', piles)).source).toBe('fallback');
+		expect((await parseCapture(client, 'call the plumber', piles, TODAY)).source).toBe('fallback');
 	});
 
 	it('falls back without a client (no API key configured)', async () => {
-		expect((await parseCapture(null, 'call the plumber', piles)).source).toBe('fallback');
+		expect((await parseCapture(null, 'call the plumber', piles, TODAY)).source).toBe('fallback');
 	});
 });

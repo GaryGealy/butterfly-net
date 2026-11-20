@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test';
-import { capture, gotoReady, logOut, seedParseUsage, signInAsAdmin, signUp } from './helpers';
+import {
+	capture,
+	gotoReady,
+	localIsoDay,
+	logOut,
+	seedParseUsage,
+	signInAsAdmin,
+	signUp
+} from './helpers';
 
 test.beforeEach(async ({ page }) => {
 	await signUp(page);
@@ -81,6 +89,57 @@ test('when the AI is down the card is Medium, and picking Low saves it as Low', 
 		.getByRole('listitem')
 		.filter({ hasText: 'Sweep the porch' });
 	await expect(row).toContainText('Low priority');
+});
+
+test('saying "tomorrow" sets the due date, without the word in the title', async ({ page }) => {
+	await page.getByLabel('Catch a thought').fill('call the vet tomorrow');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview.getByLabel('Title')).toHaveValue('call the vet');
+	await expect(preview.getByLabel('Due')).toHaveValue(localIsoDay(1));
+	await preview.getByRole('button', { name: 'Save' }).click();
+
+	const row = page
+		.getByRole('region', { name: 'garden' })
+		.getByRole('listitem')
+		.filter({ hasText: 'call the vet' });
+	await expect(row).toContainText('Tomorrow');
+});
+
+test('when the AI is down Due is empty, and a date picked before saving is kept', async ({
+	page
+}) => {
+	await page.getByLabel('Catch a thought').fill('[fail] Mail the rebate form');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview.getByLabel('Due')).toHaveValue('');
+	await expect(preview.getByRole('button', { name: 'Clear' })).toHaveCount(0);
+	await preview.getByLabel('Due').fill(localIsoDay(0));
+	await preview.getByLabel('Pile').selectOption({ label: 'house' });
+	await preview.getByRole('button', { name: 'Save' }).click();
+
+	const row = page
+		.getByRole('region', { name: 'house' })
+		.getByRole('listitem')
+		.filter({ hasText: 'Mail the rebate form' });
+	await expect(row).toContainText('Today');
+});
+
+test('Clear in the preview saves the card with no due date', async ({ page }) => {
+	await page.getByLabel('Catch a thought').fill('water the ferns tomorrow');
+	await page.getByRole('button', { name: 'Catch' }).click();
+	const preview = page.getByRole('form', { name: 'Card preview' });
+	await expect(preview.getByLabel('Due')).toHaveValue(localIsoDay(1));
+	await preview.getByRole('button', { name: 'Clear' }).click();
+	await expect(preview.getByLabel('Due')).toHaveValue('');
+	await preview.getByRole('button', { name: 'Save' }).click();
+
+	const row = page
+		.getByRole('region', { name: 'garden' })
+		.getByRole('listitem')
+		.filter({ hasText: 'water the ferns' });
+	await expect(row).toBeVisible();
+	await expect(row).not.toContainText('Tomorrow');
 });
 
 test('cancel returns to the text without saving', async ({ page }) => {
